@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Huella Digital: Estadística y Datos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+/* Mundo único claro y plano: bandas de color a sangre (cielo, marino, rosa, coral), titulares en serif,
+   etiquetas espaciadas con rombo y rayita; los cálculos se muestran paso a paso sobre tarjetas blancas. */
+:root {
+  color-scheme: light;
+  --sky: #a8d0e6; --navy: #303f80; --navy-2: #263366; --pink: #faabab; --coral: #f76c6c; --paper: #ffffff;
+  --ink: #263366; --ink-2: #55608f; --rule: #e3e8f0; --scene: #f3f7fa; --tint: #f6f8fc;
+  --s1: #303f80; --s2: #f76c6c; --s3: #1baf7a; --s4: #a9afb8;
+  --critical: #c93c3c; --warn: #b7791f; --good: #1a8a5f;
+  --ease: cubic-bezier(0.77, 0, 0.175, 1); --pop: cubic-bezier(0.18, 0.89, 0.67, 1.16);
+  --display: "Playfair Display", Georgia, "Times New Roman", serif;
+  --body: "Outfit", "Segoe UI", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--navy-2); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.5; }
+h1, h2, h3, h4 { margin: 0; text-wrap: balance; }
+p { margin: 0; }
+.wrap { max-width: 1280px; margin: 0 auto; padding: 0 40px; position: relative; z-index: 1; }
+.band { position: relative; overflow: hidden; padding: 92px 0 84px; }
+.band.sky { background: var(--sky); } .band.navy { background: var(--navy); color: #fff; }
+.band.pink { background: var(--pink); } .band.coral { background: var(--coral); color: var(--navy-2); }
+.band.parte { padding: 110px 0 100px; }
+.watermark { position: absolute; top: 50%; right: -2vw; z-index: 0; font: 700 clamp(300px, 44vw, 680px)/0.8 var(--display);
+  color: rgba(255, 255, 255, 0.18); pointer-events: none; user-select: none; transform: translate3d(0, calc(-50% + var(--par, 0px)), 0); }
+.band.navy .watermark { color: rgba(255, 255, 255, 0.06); }
+.label { display: inline-flex; align-items: center; gap: 12px; font: 700 14px/1 var(--body); letter-spacing: 0.2em; text-transform: uppercase; padding-bottom: 14px; position: relative; margin-bottom: 22px; }
+.label .dia { width: 8px; height: 8px; background: currentColor; transform: rotate(45deg); flex: none; }
+.label::after { content: ""; position: absolute; left: 0; bottom: 0; width: 28px; height: 3px; background: currentColor; transform-origin: 0 0; }
+.band.sky .label { color: #b54545; } .band.pink .label { color: #8a3b3b; } .band.coral .label { color: var(--navy-2); } .band.navy .label { color: var(--pink); }
+.statement { font: 400 clamp(32px, 4.4vw, 58px)/1.08 var(--display); max-width: 18ch; }
+.statement.lg { font-size: clamp(44px, 6.2vw, 82px); max-width: 15ch; }
+.lead { font-weight: 300; font-size: 19px; max-width: 60ch; margin-top: 18px; }
+.band.navy .lead { color: #d9def0; }
+.head { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 24px 48px; align-items: end; margin-bottom: 36px; }
+.head .lead { margin-top: 0; }
+.parte-num { font: 400 italic clamp(80px, 12vw, 160px)/0.9 var(--display); color: rgba(255,255,255,0.85); }
+.band.navy .parte-num { color: var(--pink); }
+.card { background: var(--paper); color: var(--ink); border-radius: 4px; padding: 22px; min-width: 0;
+  transform: perspective(60em) translate3d(0, 0, 0); transition: transform 0.25s, box-shadow 0.25s; box-shadow: 0 1px 0 rgba(38, 51, 102, 0.08); }
+.card:hover { transform: perspective(60em) translate3d(0, 0, 5px); box-shadow: 0 14px 30px -18px rgba(38, 51, 102, 0.45); }
+.card h3 { font: 700 13px/1.25 var(--body); letter-spacing: 0.16em; text-transform: uppercase; margin-bottom: 6px; }
+.card h4 { font: 400 22px/1.2 var(--display); margin-bottom: 6px; }
+.hint { font-size: 14px; color: var(--ink-2); font-weight: 300; }
+.grid-2 { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 20px; }
+.grid-2e { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.stack-gap > * + * { margin-top: 20px; }
+.plot { width: 100%; height: 460px; } .plot.sm { height: 280px; } .plot.md { height: 360px; } .plot.lg { height: 540px; }
+.hero { padding: 120px 0 72px; min-height: 92vh; display: flex; align-items: center; }
+.brand { position: absolute; top: 32px; left: 40px; z-index: 3; font: 700 24px/1 var(--body); color: #fff; text-decoration: none; }
+.brand span { color: var(--navy-2); }
+.hero .cta { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 34px; }
+.pill { position: relative; overflow: hidden; display: inline-flex; align-items: center; font: 700 13px/1 var(--body); letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--navy-2); background: transparent; border: 3px solid var(--navy-2); border-radius: 999px; padding: 14px 24px; cursor: pointer; text-decoration: none; transition: color 0.1s 0.1s; }
+.pill .fill { position: absolute; inset: 0; background: var(--navy-2); transform: scaleY(0); transform-origin: 0 100%; transition: transform 0.3s var(--ease); }
+.pill span { position: relative; }
+.pill:hover .fill, .pill[aria-pressed="true"] .fill { transform: scaleY(1); transform-origin: 0 0; }
+.pill:hover, .pill[aria-pressed="true"] { color: #fff; }
+.band.navy .pill { color: #fff; border-color: #fff; } .band.navy .pill .fill { background: #fff; } .band.navy .pill:hover, .band.navy .pill[aria-pressed="true"] { color: var(--navy-2); }
+.pill:focus-visible, .round:focus-visible, select:focus-visible, input:focus-visible, .pager a:focus-visible { outline: 3px solid var(--coral); outline-offset: 3px; }
+.kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 28px 24px; margin-top: 52px; padding-top: 26px; border-top: 2px solid rgba(38, 51, 102, 0.18); }
+.kpi .v { display: block; font: 400 clamp(28px, 2.8vw, 40px)/1 var(--display); font-variant-numeric: lining-nums tabular-nums; color: var(--navy-2); }
+.kpi .l { display: block; font: 700 12px/1.3 var(--body); letter-spacing: 0.15em; text-transform: uppercase; margin-top: 10px; color: var(--navy-2); }
+.kpi .n { display: block; font-size: 14px; font-weight: 300; color: #3d4a7c; margin-top: 2px; }
+.band.navy .kpi .v, .band.navy .kpi .l { color: #fff; } .band.navy .kpi .n { color: #c9d0ea; } .band.navy .kpis { border-top-color: rgba(255,255,255,0.2); }
+/* fórmulas y pasos */
+.formula { font: italic 400 19px/1.5 var(--display); background: var(--tint); border-left: 3px solid var(--coral); padding: 10px 14px; margin: 10px 0; overflow-wrap: anywhere; }
+.formula sub, .formula sup { font-size: 0.65em; }
+.formula .res { font-style: normal; font-weight: 700; color: var(--navy-2); }
+.paso { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 14px; align-items: start; padding: 14px 0; border-bottom: 1px solid var(--rule); }
+.paso:last-child { border-bottom: 0; }
+.paso .num { font: 400 30px/1 var(--display); color: var(--coral); }
+.qa { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--rule); display: grid; gap: 8px; }
+.qa p { font-size: 15px; }
+.qa b { font: 700 11px/1 var(--body); letter-spacing: 0.16em; text-transform: uppercase; display: block; margin-bottom: 3px; color: var(--ink-2); }
+.qa .r { font: 400 18px/1.35 var(--display); color: var(--ink); }
+.qa .u { color: var(--ink-2); font-weight: 300; }
+.medida { display: flex; flex-direction: column; }
+.medida .val { font: 400 34px/1 var(--display); margin: 6px 0 2px; font-variant-numeric: lining-nums tabular-nums; }
+.medida .cmp { font-size: 13px; color: var(--ink-2); }
+.filtro { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-bottom: 20px; }
+.filtro h3 { margin: 0 8px 0 0; }
+.filtro .pill { padding: 9px 14px; font-size: 12px; border-width: 2px; }
+.filtro .pill.vacio { opacity: 0.4; cursor: not-allowed; }
+.en-filtro { display: inline-flex; align-items: center; gap: 8px; margin-top: 14px; font: 700 12px/1 var(--body); letter-spacing: 0.14em; text-transform: uppercase;
+  background: var(--navy-2); color: #fff; padding: 8px 12px; border-radius: 999px; text-decoration: none; }
+.chip { white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; font: 700 11px/1 var(--body); letter-spacing: 0.12em; text-transform: uppercase; padding: 5px 10px; border-radius: 999px; border: 1.5px solid currentColor; }
+.chip.ok { color: var(--good); } .chip.no { color: var(--critical); } .chip.warn { color: var(--warn); }
+.finding { font: 400 19px/1.35 var(--display); color: var(--ink); margin-top: 16px; padding-top: 14px; border-top: 3px solid var(--coral); }
+.band.navy .finding.on-band { color: #fff; }
+table { width: 100%; border-collapse: collapse; font-size: 15px; }
+th { text-align: left; font: 700 11px/1.3 var(--body); letter-spacing: 0.13em; text-transform: uppercase; color: var(--ink-2); padding: 9px 10px; border-bottom: 2px solid var(--ink); white-space: nowrap; }
+td { padding: 8px 10px; border-bottom: 1px solid var(--rule); vertical-align: middle; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+tr.destacada td { background: #fff1f1; font-weight: 600; }
+.table-wrap { overflow-x: auto; }
+.bar { height: 6px; background: var(--rule); min-width: 70px; }
+.bar > div { height: 100%; background: var(--navy); transform-origin: 0 0; }
+.control { display: flex; flex-wrap: wrap; gap: 12px 22px; align-items: center; margin: 6px 0 12px; }
+.control label { font: 700 12px/1 var(--body); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-2); }
+.control output { font: 400 26px/1 var(--display); min-width: 2ch; }
+input[type="range"] { accent-color: var(--coral); width: 180px; }
+.ctl { display: inline-flex; align-items: center; gap: 12px; }
+select { font: 400 15px var(--body); color: var(--ink); background: #fff; border: 2px solid var(--rule); border-radius: 999px; padding: 8px 14px; }
+.legend-row { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 14px; color: var(--ink-2); }
+.legend-row span::before { content: ""; display: inline-block; width: 9px; height: 9px; margin-right: 7px; background: var(--c); transform: rotate(45deg); }
+.big-res { font: 400 46px/1 var(--display); font-variant-numeric: lining-nums tabular-nums; }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; } .tag { font-size: 13px; border: 1.5px solid var(--rule); border-radius: 999px; padding: 1px 9px; }
+.seg { border-left: 4px solid var(--c); padding: 4px 0 10px 14px; border-bottom: 1px solid var(--rule); }
+.seg b { font: 400 21px/1.2 var(--display); }
+.seg .m { font-size: 14px; color: var(--ink-2); font-weight: 300; font-variant-numeric: tabular-nums; }
+.note { font-size: 13px; color: var(--ink-2); font-weight: 300; }
+.orden { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.orden span { font-size: 13px; background: var(--tint); border: 1px solid var(--rule); padding: 4px 10px; border-radius: 4px; }
+footer { background: var(--navy-2); color: #b9c1e0; font-size: 14px; font-weight: 300; padding: 36px 0 48px; }
+.error { background: #fff; color: var(--critical); border-left: 4px solid var(--critical); padding: 14px 18px; margin: 20px 0; display: none; }
+/* navegación */
+.pager { opacity: 0.18; transition: opacity 0.35s ease; position: fixed; right: 30px; top: 50%; transform: translateY(-50%); z-index: 20; display: flex; flex-direction: column; gap: 11px; align-items: flex-end;
+  padding: 12px 10px; border-radius: 4px; background: rgba(255, 255, 255, 0.92); box-shadow: 0 6px 20px -12px rgba(38, 51, 102, 0.5); }
+.pager a { position: relative; display: flex; align-items: center; text-decoration: none; color: var(--ink-2); font: 700 10.5px/1 var(--body); letter-spacing: 0.16em; text-transform: uppercase; }
+.pager a .t { position: absolute; right: 40px; top: 50%; margin-top: -11px; padding: 6px 10px; background: #fff; border-radius: 3px; box-shadow: 0 4px 14px -8px rgba(38,51,102,.5);
+  opacity: 0; transform: translateX(6px); transition: opacity 0.2s, transform 0.2s; white-space: nowrap; pointer-events: none; }
+.pager a:hover .t, .pager a.activo .t { opacity: 1; transform: none; }
+.pager.ver, .pager:hover, .pager:focus-within { opacity: 1; }
+.pager a .d { display: block; margin-left: 14px; width: 12px; height: 3px; background: currentColor; transition: width 0.3s; }
+.pager a.activo { color: var(--navy-2); } .pager a.activo .d, .pager a:hover .d { width: 26px; }
+.pager .sep { height: 1px; width: 26px; background: var(--rule); margin: 2px 0; }
+.rounds { position: fixed; right: 30px; bottom: 28px; z-index: 20; display: flex; flex-direction: column; gap: 12px; }
+.round { position: relative; overflow: hidden; width: 46px; height: 46px; border-radius: 50%; border: 3px solid var(--navy-2); background: rgba(255, 255, 255, 0.85);
+  color: var(--navy-2); font: 700 18px/1 var(--body); cursor: pointer; display: grid; place-items: center; transition: color 0.1s 0.1s; }
+.round .fill { position: absolute; inset: 0; background: var(--navy-2); transform: scaleY(0); transform-origin: 0 100%; transition: transform 0.3s var(--ease); }
+.round span { position: relative; } .round:hover .fill { transform: scaleY(1); transform-origin: 0 0; } .round:hover { color: #fff; }
+.loader { position: fixed; inset: 0; z-index: 100; background: var(--pink); display: grid; place-items: center; transform-origin: 50% 0; transition: transform 0.8s var(--ease); }
+.loader .mark { text-align: center; color: #fff; }
+.loader .mark b { display: block; font: 700 54px/1 var(--body); letter-spacing: -0.02em; }
+.loader .mark small { display: block; font: 400 13px/1 var(--body); letter-spacing: 0.3em; margin-top: 8px; }
+.loader .dots { display: flex; gap: 10px; justify-content: center; margin-top: 16px; }
+.loader .dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--navy); animation: salto 0.9s var(--pop) infinite alternate; }
+.loader .dots i:nth-child(2) { animation-delay: 0.3s; }
+@keyframes salto { to { transform: translateY(-9px); } }
+body.listo .loader { transform: scaleY(0); }
+.cortina { position: fixed; inset: 0; z-index: 90; pointer-events: none; }
+.cortina svg { position: absolute; top: 0; height: 100%; width: 150vw; left: -150vw; }
+.cortina .c2 { transition: transform 0.55s var(--ease) 0.06s; } .cortina .c1 { transition: transform 0.55s var(--ease); }
+.cortina.cubre .c1, .cortina.cubre .c2 { transform: translateX(150vw); }
+.cortina.sale .c1, .cortina.sale .c2 { transform: translateX(300vw); }
+.cortina.reset .c1, .cortina.reset .c2 { transition: none; }
+/* animaciones de entrada */
+.anim .w { display: inline-block; overflow: hidden; vertical-align: top; padding-bottom: 0.08em; margin-bottom: -0.08em; }
+.anim .w > span { display: inline-block; transform: translateY(105%); transition: transform 0.8s var(--ease); transition-delay: calc(var(--i) * 45ms + 120ms); }
+.anim .in .w > span { transform: none; }
+.anim .label::after { transform: scaleX(0); }
+.anim .in .label::after { animation: rayita 0.9s var(--ease) 0.1s forwards; }
+@keyframes rayita { 0% { transform: scaleX(0); transform-origin: 0 0; } 45% { transform: scaleX(1.6); transform-origin: 0 0; } 100% { transform: scaleX(1); transform-origin: 0 0; } }
+.anim .label .dia { transform: rotate(45deg) scale(0); transition: transform 0.4s var(--pop) 0.05s; }
+.anim .in .label .dia { transform: rotate(45deg) scale(1); }
+.anim .sube { opacity: 0; transform: translateY(30px); transition: opacity 0.7s ease, transform 0.9s var(--ease); transition-delay: calc(var(--d, 0) * 1ms + 250ms); }
+.anim .in .sube { opacity: 1; transform: none; }
+.anim .bar > div { transform: scaleX(0); transition: transform 1s var(--ease) 0.3s; }
+.anim .in .bar > div { transform: scaleX(1); }
+.label:hover::after { animation: barra 0.6s var(--ease); }
+@keyframes barra { 0% { transform: scaleX(1); transform-origin: 100% 0; } 50% { transform: scaleX(0); transform-origin: 100% 0; } 50.01% { transform: scaleX(0); transform-origin: 0 0; } 100% { transform: scaleX(1); transform-origin: 0 0; } }
+@media (max-width: 1100px) {
+  .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .grid-2, .grid-2e, .grid-3, .head { grid-template-columns: 1fr; } .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pager { display: none; }
+}
+@media (max-width: 560px) {
+  .wrap { padding: 0 18px; } .brand { left: 18px; } .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid-4 { grid-template-columns: 1fr; } .plot { height: 400px; } .band { padding: 70px 0 60px; } .rounds { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .loader, .cortina { display: none; } *, *::before, *::after { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="loader" aria-hidden="true"><div class="mark"><b>huella.</b><small>ESTADÍSTICA · DATOS</small><div class="dots"><i></i><i></i></div></div></div>
+<div class="cortina reset" aria-hidden="true">
+  <svg class="c1" viewBox="0 0 150 100" preserveAspectRatio="none"><path fill="#ffffff" d="M0 0 H120 C132 12 112 24 124 38 C136 52 114 64 126 78 C136 90 120 96 124 100 H0 Z"/></svg>
+  <svg class="c2" viewBox="0 0 150 100" preserveAspectRatio="none"><path fill="#faabab" d="M0 0 H112 C124 14 104 28 116 42 C128 56 106 70 118 84 C126 94 112 98 116 100 H0 Z"/></svg>
+</div>
+<a class="brand" href="#inicio">huella<span>.</span></a>
+<nav class="pager" aria-label="Secciones" id="pager">
+  <a href="#inicio"><span class="t">Inicio</span><span class="d"></span></a>
+  <span class="sep"></span>
+  <a href="#estadistica"><span class="t">Estadística</span><span class="d"></span></a>
+  <a href="#poblacion"><span class="t">Población y muestra</span><span class="d"></span></a>
+  <a href="#agrupados"><span class="t">Datos agrupados</span><span class="d"></span></a>
+  <a href="#medidas"><span class="t">Medidas</span><span class="d"></span></a>
+  <a href="#antiguedad"><span class="t">Antigüedad</span><span class="d"></span></a>
+  <a href="#regresion"><span class="t">Regresión</span><span class="d"></span></a>
+  <a href="#proporciones"><span class="t">Proporciones</span><span class="d"></span></a>
+  <a href="#conteo"><span class="t">Conteo</span><span class="d"></span></a>
+  <a href="#probabilidad"><span class="t">Probabilidad</span><span class="d"></span></a>
+  <a href="#validacion"><span class="t">Validación</span><span class="d"></span></a>
+  <span class="sep"></span>
+  <a href="#ciencia"><span class="t">Ciencia de datos</span><span class="d"></span></a>
+  <a href="#calidad"><span class="t">Calidad</span><span class="d"></span></a>
+  <a href="#huella"><span class="t">Huella por mes</span><span class="d"></span></a>
+  <a href="#segmentos"><span class="t">Segmentos</span><span class="d"></span></a>
+  <a href="#reglas"><span class="t">Reglas</span><span class="d"></span></a>
+  <a href="#alineacion"><span class="t">Alineación</span><span class="d"></span></a>
+</nav>
+<div class="rounds">
+  <button class="round" type="button" id="subir" aria-label="Sección anterior"><span class="fill"></span><span>↑</span></button>
+  <button class="round" type="button" id="bajar" aria-label="Sección siguiente"><span class="fill"></span><span>↓</span></button>
+</div>
+
+<main>
+<!-- ===================== INICIO ===================== -->
+<section class="band sky hero" id="inicio">
+  <span class="watermark" aria-hidden="true">H</span>
+  <div class="wrap" style="width:100%">
+    <div class="error" id="error">No se pudieron cargar los datos. Recarga la página.</div>
+    <p class="label"><i class="dia"></i>Estadística + ciencia de datos · Marketing</p>
+    <h1 class="statement lg split">Comportamiento digital y cargo fijo de líneas móviles</h1>
+    <p class="lead sube" style="--d:200">Análisis de registros reales anonimizados de una empresa de telefonía móvil en Colombia, actualizados entre enero y octubre de 2026. Cada resultado muestra cómo se calculó.</p>
+    <div class="cta sube" style="--d:350">
+      <a class="pill" href="#estadistica"><span class="fill"></span><span>Parte 1 · Estadística</span></a>
+      <a class="pill" href="#ciencia"><span class="fill"></span><span>Parte 2 · Ciencia de datos</span></a>
+    </div>
+    <div class="kpis sube" style="--d:500" id="kpis"></div>
+  </div>
+</section>
+
+<!-- ===================== PARTE 1 ===================== -->
+<section class="band navy parte" id="estadistica">
+  <span class="watermark" aria-hidden="true">E</span>
+  <div class="wrap">
+    <div class="head">
+      <div><span class="parte-num">01</span><p class="label" style="margin-top:18px"><i class="dia"></i>Parte 1</p><h2 class="statement split">Estadística</h2></div>
+      <p class="lead sube">Tratamiento estadístico común sobre una sola variable, el cargo fijo mensual (VAL_CFM): datos agrupados, tendencia central, posición y dispersión. Después, mínimos cuadrados y correlación con la antigüedad, y modelado probabilístico con las preferencias digitales.</p>
+    </div>
+  </div>
+</section>
+
+<section class="band sky" id="poblacion">
+  <span class="watermark" aria-hidden="true">P</span>
+  <div class="wrap">
+    <div class="head">
+      <div><p class="label"><i class="dia"></i>5.2 · Conceptos básicos</p><h2 class="statement split">De 9.000 registros a la población de estudio</h2></div>
+      <p class="lead sube">La población son los registros de personas naturales con edad válida. Lo que se calcula sobre los registros recibidos es un estadístico; el valor de toda la base de la empresa sería el parámetro.</p>
+    </div>
+    <div class="grid-2">
+      <div class="card sube"><h3>Embudo de elegibilidad</h3><p class="hint">Cada paso aplica un criterio de la sección 5.2.1</p><div class="plot md" id="p-embudo"></div></div>
+      <div class="card sube" style="--d:120"><h3>Estratos por mes</h3><p class="hint">Recibidos (1.000 por mes) y elegibles; la meta del plan era 10.000 por mes</p><div class="plot md" id="p-estratos"></div></div>
+    </div>
+    <div class="grid-4" style="margin-top:20px" id="conceptos"></div>
+    <div class="card sube" style="margin-top:20px">
+      <h3>Clasificación de las seis variables (Tabla 1)</h3>
+      <div class="table-wrap"><table id="t-variables"></table></div>
+      <p class="finding" id="f-poblacion"></p>
+    </div>
+  </div>
+</section>
+
+<section class="band pink" id="agrupados">
+  <span class="watermark" aria-hidden="true">A</span>
+  <div class="wrap">
+    <div class="head">
+      <div><p class="label"><i class="dia"></i>5.4 · Datos agrupados · VAL_CFM</p><h2 class="statement split">Intervalos, marcas y frecuencias del cargo fijo</h2></div>
+      <p class="lead sube">Se agrupa una sola variable: el cargo fijo mensual en pesos. Mueve el número de clases para ver cómo cambian la tabla y las medidas, o filtra por mes; Sturges sugiere el número de clases según el tamaño de la selección.</p>
+    </div>
+    <div class="card sube filtro" id="filtro-card"><h3>Mes de actualización</h3><div class="filtro" id="filtro-mes" style="margin:0"></div><p class="hint" id="filtro-nota" style="flex-basis:100%"></p></div>
+    <div class="grid-2">
+      <div class="card sube">
+        <h3>Cómo se construyen los intervalos</h3>
+        <div id="pasos-agrupados"></div>
+      </div>
+      <div class="card sube" style="--d:120">
+        <h3>Cambiar el número de clases</h3>
+        <div class="control"><label for="k-slider">k</label><input type="range" id="k-slider" min="5" max="25" step="1" value="13"><output id="k-out">13</output><button class="pill" type="button" id="k-reset" style="padding:9px 16px"><span class="fill"></span><span>Volver a Sturges</span></button></div>
+        <p class="hint" id="k-nota"></p>
+        <div class="plot sm" id="p-hist"></div>
+        <div class="plot sm" id="p-ojiva"></div>
+      </div>
+    </div>
+    <div class="card sube" style="margin-top:20px">
+      <h3>Tabla de frecuencias</h3>
+      <p class="hint">Intervalos [L<sub>i</sub>, U<sub>i</sub>); el último incluye el máximo. En rojo, la clase modal.</p>
+      <div class="table-wrap"><table id="t-frecuencias"></table></div>
+      <div class="qa" id="qa-agrupados"></div>
+    </div>
+  </div>
+</section>
+
+<section class="band sky" id="medidas">
+  <span class="watermark" aria-hidden="true">M</span>
+  <div class="wrap">
+    <div class="head">
+      <div><p class="label"><i class="dia"></i>5.5 a 5.7 · Medidas</p><h2 class="statement split">Centro, posición y dispersión del cargo fijo</h2></div>
+      <p class="lead sube">Cada tarjeta muestra la fórmula con los valores reemplazados, el resultado agrupado y el exacto sobre los datos individuales. Cambian si mueves k o el mes en la sección anterior.<br><a class="en-filtro" href="#agrupados" id="chip-medidas"></a></p>
+    </div>
+    <div class="card sube" style="margin-bottom:20px"><h3>Dónde cae cada medida</h3><p class="hint">Media, mediana, moda y cuartiles agrupados sobre la recta del cargo fijo (COP)</p><div class="plot sm" id="p-recta"></div></div>
+    <div class="grid-3" id="tarjetas-medidas"></div>
+    <div class="card sube" style="margin-top:20px">
+      <h3>Agrupado frente a exacto</h3>
+      <div class="table-wrap"><table id="t-comparacion"></table></div>
+      <p class="finding" id="f-medidas"></p>
+    </div>
+  </div>
+</section>
+
+<section class="band coral" id="antiguedad">
+  <span class="watermark" aria-hidden="true">T</span>
+  <div class="wrap">
+    <div class="head">
+      <div><p class="label"><i class="dia"></i>5.3.1 · ANTIGUEDAD_MESES</p><h2 class="statement split">Una base de líneas recién activadas</h2></div>
+      <p class="lead sube">La antigüedad es discreta (meses enteros): se describe con los valores individuales y se resume en tramos de permanencia, sin tratarla como continua.</p>
+    </div>
+    <div class="kpis" id="kpis-antig" style="margin:0 0 28px"></div>
+    <div class="grid-2">
+      <div class="card sube"><h3>Registros por tramo de permanencia</h3><div class="plot md" id="p-antig"></div></div>
+      <div class="card sube" style="--d:120"><h3>Pregunta de análisis</h3><div class="qa" id="qa-antig" style="border:0;margin:0;padding:0"></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="band navy" id="regresion">
+  <span class="watermark" aria-hidden="true">R</span>
+  <div class="wrap">
+    <div class="head">
+      <div><p class="label"><i class="dia"></i>5.8 y 5.9 · Mínimos cuadrados y Pearson</p><h2 class="statement split">Más antigüedad, cargo un poco menor</h2></div>
+      <p class="lead sube">X = antigüedad (meses), Y = cargo fijo (COP), con los pares individuales válidos. El tamaño de cada punto indica cuántos registros comparten esos valores.</p>
+    </div>
+    <div class="grid-2">
+      <div class="card sube"><h3>Diagrama de dispersión y recta ajustada</h3><div class="plot lg" id="p-dispersion"></div></div>
+      <div class="card sube" style="--d:120"><h3>Cálculo paso a paso</h3><div id="pasos-regresion"></div></div>
+    </div>
+    <div class="grid-2" style="margin-top:20px">
+      <div class="card sube"><h3>Antigüedad y cargo fijo a la vez</h3><p class="hint">Registros por tramo de antigüedad y rango de cargo fijo (altura en escala logarítmica)</p><div class="plot" id="p-conjunta" style="height:820px"></div></div>
+      <div class="card sube" style="--d:120">
+        <h3>Sensibilidad del ajuste</h3>
+        <div class="table-wrap"><table id="t-sensibilidad"></table></div>
+        <h3 style="margin-top:16px">Residuos</h3><div class="plot sm" id="p-residuos"></div>
+        <div class="qa" id="qa-regresion"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band pink" id="proporciones">
+  <span class="watermark" aria-hidden="true">%</span>
+  <div class="wrap">
+    <div class="head">
+      <div><p class="label"><i class="dia"></i>5.3.3 a 5.3.6 · Variables nominales</p><h2 class="statement split">Pocas preferencias digitales y mucha restricción</h2></div>
+      <p class="lead sube">Proporción observada p̂ = f / n de cada indicador, con n = registros con información válida.<br><a class="en-filtro" href="#agrupados" id="chip-proporciones"></a></p>
+    </div>
+    <div class="grid-2">
+      <div class="card sube"><h3>Proporción con el indicador activo</h3><div class="plot md" id="p-proporciones"></div></div>
+      <div class="card sube" style="--d:120"><h3>La restricción cambia todo</h3><p class="hint">Banca digital según la restricción de contacto</p><div class="plot md" id="p-restriccion"></div></div>
+    </div>
+    <div class="grid-2e" style="margin-top:20px" id="qa-proporciones"></div>
+  </div>
+</section>
+
+<section class="band sky" id="conteo">
+  <span class="watermark" aria-hidden="true">C</span>
+  <div class="wrap">
+    <div class="head">
+      <div><p class="label"><i class="dia"></i>5.10.1 a 5.10.3 · Técnicas de conteo</p><h2 class="statement split">Perfiles, órdenes y grupos posibles</h2></div>
+      <p class="lead sube">Principio multiplicativo, permutaciones y combinaciones con universos explícitos: las tres banderas digitales y cinco campañas candidatas.</p>
+    </div>
+    <div class="grid-2">
+      <div class="card sube"><h3>Principio multiplicativo · el cubo de perfiles</h3><p class="hint">Cada vértice es un perfil Banca × Billetera × Pagos; el tamaño indica cuántos registros lo tienen</p><div class="plot" id="p-cubo" style="height:900px"></div></div>
+      <div class="card sube" style="--d:120" id="conteo-pasos"></div>
+    </div>
+  </div>
+</section>
+
+<section class="band coral" id="probabilidad">
+  <span class="watermark" aria-hidden="true">P</span>
+  <div class="wrap">
+    <div class="head">
+      <div><p class="label"><i class="dia"></i>5.10.4 y 5.10.5 · Probabilidad</p><h2 class="statement split">Qué tan probable es acertar en una selección</h2></div>
+      <p class="lead sube">Probabilidad clásica al escoger un registro al azar, y modelo hipergeométrico para selecciones sin reemplazo. Usa la calculadora para armar tu propio escenario.</p>
+    </div>
+    <div class="grid-2">
+      <div class="card sube">
+        <h3>Calculadora hipergeométrica</h3>
+        <div class="control">
+          <label for="h-universo">Universo</label><select id="h-universo"></select>
+          <label for="h-indicador">Indicador</label><select id="h-indicador"></select>
+        </div>
+        <div class="control">
+          <span class="ctl"><label for="h-m">Tamaño m</label><input type="range" id="h-m" min="1" max="60" value="20"><output id="h-m-out">20</output></span>
+          <span class="ctl"><label for="h-x">Al menos x</label><input type="range" id="h-x" min="0" max="20" value="5"><output id="h-x-out">5</output></span>
+        </div>
+        <div class="grid-3" id="h-resultados" style="gap:12px;margin:10px 0"></div>
+        <div class="formula" id="h-formula"></div>
+        <div class="plot md" id="p-hiper"></div>
+      </div>
+      <div class="card sube" style="--d:120">
+        <h3>Probabilidades al escoger un registro al azar</h3>
+        <div class="table-wrap"><table id="t-probs"></table></div>
+        <div class="qa" id="qa-probabilidad"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band navy" id="validacion">
+  <span class="watermark" aria-hidden="true">V</span>
+  <div class="wrap">
+    <div class="head">
+      <div><p class="label"><i class="dia"></i>6.4 · Resultados y pruebas</p><h2 class="statement split">Cálculo manual frente a cálculo computacional</h2></div>
+      <p class="lead sube">Cada indicador se calculó con la fórmula del documento (sumas y lazos explícitos) y con la función de la biblioteca. La diferencia se compara con una tolerancia justificada por el redondeo.</p>
+    </div>
+    <div class="card sube table-wrap"><table id="t-validacion"></table></div>
+  </div>
+</section>
+
+<!-- ===================== PARTE 2 ===================== -->
+<section class="band coral parte" id="ciencia">
+  <span class="watermark" aria-hidden="true">D</span>
+  <div class="wrap">
+    <div class="head">
+      <div><span class="parte-num">02</span><p class="label" style="margin-top:18px"><i class="dia"></i>Parte 2</p><h2 class="statement split">Ciencia de datos</h2></div>
+      <p class="lead sube">Calidad de datos, segmentación y reglas de afinidad financiera, cada hallazgo conectado con una pregunta de la parte estadística.</p>
+    </div>
+    <div class="kpis" id="kpis-ciencia" style="margin-top:0"></div>
+  </div>
+</section>
+
+<section class="band sky" id="calidad">
+  <span class="watermark" aria-hidden="true">Q</span>
+  <div class="wrap">
+    <div class="head">
+      <div><p class="label"><i class="dia"></i>Calidad de datos</p><h2 class="statement split">Lo que hubo que decidir antes de analizar</h2></div>
+      <p class="lead sube">Problemas encontrados en los 9.000 registros recibidos y la decisión tomada en cada caso.</p>
+    </div>
+    <div class="card sube table-wrap"><table id="t-calidad"></table></div>
+  </div>
+</section>
+
+<section class="band pink" id="huella">
+  <span class="watermark" aria-hidden="true">H</span>
+  <div class="wrap">
+    <div class="head">
+      <div><p class="label"><i class="dia"></i>Hallazgo principal</p><h2 class="statement split">La huella digital no se midió todos los meses</h2></div>
+      <p class="lead sube">En julio, agosto y octubre ningún registro tiene banderas de interés, ni siquiera las líneas antiguas. Eso no significa que esos clientes no tengan intereses: las banderas no se calcularon.</p>
+    </div>
+    <div class="grid-2">
+      <div class="card sube"><h3>Registros con alguna bandera de interés, por mes</h3><div class="plot md" id="p-huella-mes"></div></div>
+      <div class="card sube" style="--d:120"><h3>Por tramo de antigüedad</h3><p class="hint">Solo meses en que la huella se midió</p><div class="plot md" id="p-huella-tramo"></div></div>
+    </div>
+    <p class="finding sube" id="f-huella" style="background:#fff;padding:18px 22px;border-radius:4px;border-top:0;border-left:3px solid var(--coral)"></p>
+  </div>
+</section>
+
+<section class="band navy" id="segmentos">
+  <span class="watermark" aria-hidden="true">S</span>
+  <div class="wrap">
+    <div class="head">
+      <div><p class="label"><i class="dia"></i>Segmentación en dos etapas</p><h2 class="statement split">Nueve de cada diez registros no tienen huella</h2></div>
+      <p class="lead sube">Primero se separan los registros con y sin huella digital; luego K-means agrupa a quienes sí la tienen según sus familias de intereses. Cada segmento se describe con las variables del documento.</p>
+    </div>
+    <div class="grid-2">
+      <div class="card sube"><h3>Registros con huella por segmento</h3><p class="hint">Componentes principales de los índices de interés; arrastra para girar</p><div class="plot lg" id="p-segmentos"></div></div>
+      <div class="card sube" style="--d:120"><h3>Perfil de cada segmento</h3><p class="hint">Etiquetas: intereses más marcados, con un índice donde 100 = promedio de los registros con huella</p><div id="segs"></div></div>
+    </div>
+    <div class="card sube" style="margin-top:20px">
+      <h3>Cargo fijo por segmento: ¿quién varía más? (5.7.3)</h3>
+      <div class="table-wrap"><table id="t-segmentos"></table></div>
+    </div>
+  </div>
+</section>
+
+<section class="band coral" id="reglas">
+  <span class="watermark" aria-hidden="true">R</span>
+  <div class="wrap">
+    <div class="head">
+      <div><p class="label"><i class="dia"></i>Modelo de afinidad financiera</p><h2 class="statement split">Reglas que son probabilidades condicionales</h2></div>
+      <p class="lead sube">Árbol de decisión de 3 niveles que estima si un registro tiene banca, billetera o pagos en línea, entrenado solo con los meses en que la huella se midió. Cada hoja es una regla «si… entonces P(afinidad) = …».</p>
+    </div>
+    <div class="kpis" id="kpis-modelo" style="margin:0 0 28px"></div>
+    <div class="grid-2">
+      <div class="card sube"><h3>Reglas del árbol</h3><div class="table-wrap"><table id="t-reglas"></table></div><p class="note" style="margin-top:10px" id="n-reglas"></p></div>
+      <div class="card sube" style="--d:120"><h3>Selección de 20 registros: al azar frente a la mejor regla</h3><p class="hint">Distribución hipergeométrica del número de registros con afinidad</p><div class="plot md" id="p-hip-ds"></div><p class="finding" id="f-reglas"></p></div>
+    </div>
+    <div class="card sube" style="margin-top:20px">
+      <h3>Prueba con datos que el modelo no vio (70 % entrenamiento, 30 % prueba)</h3>
+      <p class="hint">Variable objetivo: tener banca, billetera o pagos en línea. Se entrena con el 70 % de los registros de los meses medidos y se mide en el 30 % restante.</p>
+      <div class="grid-2" style="margin-top:12px"><div class="kpis" id="kpis-prueba" style="margin:0;padding:0;border:0;grid-template-columns:repeat(3,minmax(0,1fr))"></div>
+      <div class="table-wrap"><table id="t-confusion"></table></div></div>
+      <p class="finding" id="f-prueba"></p>
+    </div>
+  </div>
+</section>
+
+<section class="band sky" id="alineacion">
+  <span class="watermark" aria-hidden="true">✓</span>
+  <div class="wrap">
+    <div class="head">
+      <div><p class="label"><i class="dia"></i>Estadística ↔ ciencia de datos</p><h2 class="statement split">Cómo cada hallazgo responde una pregunta</h2></div>
+      <p class="lead sube">La ciencia de datos no reemplaza los cálculos estadísticos: explica por qué salen así y qué hacer con ellos.</p>
+    </div>
+    <div class="grid-2e" id="alineacion-cards"></div>
+  </div>
+</section>
+</main>
+<footer><div class="wrap" id="pie">Datos reales anonimizados de una empresa de telefonía móvil. Solo se muestran resultados agregados.</div></footer>
+
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<script>
+(() => {
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const C = { ink: css('--ink'), ink2: css('--ink-2'), rule: css('--rule'), scene: css('--scene'), navy: css('--navy'), coral: css('--coral'),
+              pink: css('--pink'), aqua: css('--s3'), gray: css('--s4'), sky: css('--sky') };
+  const nf = (v, d = 0) => v == null || Number.isNaN(v) ? '—' : Number(v).toLocaleString('es-CO', { minimumFractionDigits: d, maximumFractionDigits: d });
+  const pc = (v, d = 1) => v == null ? '—' : `${nf(100 * v, d)} %`;
+  const $ = id => document.getElementById(id);
+  const cfg = { displaylogo: false, responsive: true, modeBarButtonsToRemove: ['toImage', 'sendDataToCloud', 'select2d', 'lasso2d'] };
+  const font = { family: 'Outfit, Segoe UI, system-ui, sans-serif', color: C.ink2, size: 12 };
+  const hoverlabel = { bgcolor: '#263366', bordercolor: '#263366', font: { color: '#fff', family: 'Outfit, sans-serif' } };
+  const L2 = (extra = {}) => Object.assign({ paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', font, hoverlabel,
+    separators: ',.', margin: { l: 52, r: 14, t: 10, b: 42 }, xaxis: { gridcolor: C.rule, zeroline: false, linecolor: C.rule }, yaxis: { gridcolor: C.rule, zeroline: false },
+    showlegend: false }, extra);
+  const ax3 = (t, extra = {}) => Object.assign({ title: { text: t, font: { size: 12, color: C.ink2 } }, gridcolor: '#dbe3ec', zerolinecolor: '#dbe3ec',
+    showbackground: true, backgroundcolor: C.scene, tickfont: { size: 11, color: C.ink2 } }, extra);
+  const SEQ = [[0, '#cde2fb'], [0.35, '#6da7ec'], [0.7, '#2a78d6'], [1, '#263366']];
+  let D;
+
+  // ---------- animaciones y navegación ----------
+  if (!reduce) document.documentElement.classList.add('anim');
+  document.querySelectorAll('.split').forEach(el => {
+    el.setAttribute('aria-label', el.textContent.trim());
+    el.innerHTML = el.textContent.trim().split(/\s+/).map((w, i) => `<span class="w" aria-hidden="true"><span style="--i:${i}">${w}</span></span>`).join(' ');
+  });
+  const bandas = [...document.querySelectorAll('.band')];
+  const io = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) e.target.classList.add('in'); }), { threshold: 0.08 }) : null;
+  const pager = [...document.querySelectorAll('#pager a')];
+  const activo = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => {
+    if (e.isIntersecting) pager.forEach(a => a.classList.toggle('activo', a.getAttribute('href') === '#' + e.target.id));
+  }), { rootMargin: '-45% 0px -50% 0px' }) : null;
+  bandas.forEach(b => { io ? io.observe(b) : b.classList.add('in'); activo && activo.observe(b); });
+  setTimeout(() => bandas.forEach(b => b.classList.add('in')), 9000);
+  // paginador: visible mientras se desplaza; al llegar a una sección se desvanece (el hover lo muestra)
+  const pagerEl = $('pager'); let ocultar;
+  const mostrarPager = () => { pagerEl.classList.add('ver'); clearTimeout(ocultar); ocultar = setTimeout(() => pagerEl.classList.remove('ver'), 700); };
+  addEventListener('scroll', mostrarPager, { passive: true });
+  const marcas = [...document.querySelectorAll('.watermark')];
+  let pend = false;
+  const parallax = () => { pend = false; marcas.forEach(m => { const r = m.parentElement.getBoundingClientRect(); m.style.setProperty('--par', `${(r.top + r.height / 2 - innerHeight / 2) * -0.18}px`); }); };
+  if (!reduce) addEventListener('scroll', () => { if (!pend) { pend = true; requestAnimationFrame(parallax); } }, { passive: true });
+  const cortina = document.querySelector('.cortina');
+  const ir = id => {
+    const destino = $(id); if (!destino) return;
+    if (reduce) { destino.scrollIntoView(); return; }
+    cortina.className = 'cortina reset'; void cortina.offsetWidth; cortina.className = 'cortina cubre';
+    setTimeout(() => { destino.scrollIntoView({ behavior: 'instant', block: 'start' }); parallax(); cortina.className = 'cortina sale'; }, 620);
+    setTimeout(() => { cortina.className = 'cortina reset'; }, 1300);
+  };
+  document.querySelectorAll('a[href^="#"]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); ir(a.getAttribute('href').slice(1)); }));
+  const actual = () => { const y = innerHeight * 0.4; let i = 0; bandas.forEach((b, k) => { if (b.getBoundingClientRect().top <= y) i = k; }); return i; };
+  $('subir').addEventListener('click', () => ir(bandas[Math.max(0, actual() - 1)].id));
+  $('bajar').addEventListener('click', () => ir(bandas[Math.min(bandas.length - 1, actual() + 1)].id));
+
+  // ---------- datos ----------
+  const emb = $('datos');
+  const cargar = emb && emb.textContent.trim().startsWith('{') ? Promise.resolve(JSON.parse(emb.textContent))
+    : fetch('data/dashboard_data.json').then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
+  const fuentes = document.fonts && document.fonts.ready ? Promise.race([document.fonts.ready, new Promise(r => setTimeout(r, 1500))]) : Promise.resolve();
+  Promise.all([cargar, fuentes]).then(([d]) => { D = d; init(); })
+    .catch(e => { console.error(e); $('error').style.display = 'block'; })
+    .finally(() => setTimeout(() => document.body.classList.add('listo'), reduce ? 0 : 350));
+
+  const qa = (pregunta, respuesta, utilidad) => `<p><b>Pregunta</b>${pregunta}</p><p class="r">${respuesta}</p><p class="u"><b>Utilidad para el marketing</b>${utilidad}</p>`;
+
+  function init() {
+    renderInicio(); renderPoblacion(); setupAgrupados(); renderAntiguedad(); renderRegresion(); renderProporciones();
+    renderConteo(); setupHiper(); renderValidacion(); renderCiencia();
+  }
+
+  // ---------- INICIO ----------
+  function renderInicio() {
+    const p = D.preparacion, d = D.descriptiva, r = D.regresion;
+    $('kpis').innerHTML = [
+      [nf(p.recibidos), 'Registros recibidos', '1.000 por mes, 9 meses'],
+      [nf(d.n), 'Población de estudio', 'personas naturales, edad válida'],
+      ['6', 'Variables', '2 cuantitativas, 4 nominales'],
+      [`$${nf(d.exactas.media)}`, 'Cargo fijo promedio', `mediana $${nf(d.exactas.mediana)}`],
+      [nf(r.r, 2), 'Correlación de Pearson', 'antigüedad vs. cargo fijo'],
+      [pc(d.proporciones.BAN_BANCA.p), 'Banca digital activa', `${pc(D.ciencia.prop_medidos.BAN_BANCA)} en meses medidos`],
+    ].map(([v, l, n]) => `<div class="kpi"><span class="v">${v}</span><span class="l">${l}</span><span class="n">${n}</span></div>`).join('');
+    $('pie').textContent = `Datos reales anonimizados de ${D.meta.empresa} · ${D.meta.periodo} · unidad: ${D.meta.unidad}. Solo se muestran resultados agregados; ningún registro individual es identificable.`;
+  }
+
+  // ---------- POBLACIÓN ----------
+  function renderPoblacion() {
+    const p = D.preparacion, emb = p.embudo;
+    Plotly.react('p-embudo', [{ type: 'funnel', y: emb.map(e => e.paso.replace(/ (actualizados|con|\()/, '<br>$1')), x: emb.map(e => e.registros), textinfo: 'value+percent initial',
+      marker: { color: [C.sky, C.sky, C.navy, C.coral] }, connector: { fillcolor: '#e9eef6', line: { color: C.rule } }, textfont: { family: 'Outfit, sans-serif', size: 14 }, texttemplate: '%{value:,}<br>%{percentInitial:.0%}',
+      hovertemplate: '%{y}<br>%{x:,} registros<extra></extra>' }],
+      L2({ margin: { l: 190, r: 20, t: 10, b: 20 }, yaxis: { tickfont: { size: 12, color: C.ink } } }), cfg);
+    const e = p.estratos;
+    Plotly.react('p-estratos', [
+      { type: 'bar', name: 'Recibidos', x: e.map(r => r.nombre.slice(0, 3)), y: e.map(r => r.recibidos), marker: { color: '#c9d1e3' }, hovertemplate: '%{x}: %{y:,} recibidos<extra></extra>' },
+      { type: 'bar', name: 'Elegibles', x: e.map(r => r.nombre.slice(0, 3)), y: e.map(r => r.elegibles), marker: { color: C.navy }, hovertemplate: '%{x}: %{y:,} elegibles<extra></extra>' }],
+      L2({ barmode: 'overlay', bargap: 0.3, showlegend: true, legend: { orientation: 'h', y: 1.1, font: { color: C.ink } },
+        annotations: [{ x: 'Sep', y: 60, text: 'sin datos', showarrow: false, font: { color: C.coral, size: 12 } }] }), cfg);
+    const d = D.descriptiva;
+    const conceptos = [
+      ['Población', 'Registros elegibles de líneas de personas naturales, actualizados entre enero y octubre de 2026. Su tamaño N en la base completa no se conoce.'],
+      ['Muestra', `n = ${nf(d.n)} registros elegibles de los ${nf(p.recibidos)} recibidos (1.000 por mes, 9 meses). No son ${nf(d.n)} clientes únicos.`],
+      ['Parámetro', 'El cargo fijo promedio de toda la población, μ. Desconocido: solo se puede estimar.'],
+      ['Estadístico', `El cargo fijo promedio de la muestra, x̄ = $${nf(d.exactas.media, 0)}. Describe los registros analizados.`],
+    ];
+    $('conceptos').innerHTML = conceptos.map(([t, x], i) => `<div class="card sube" style="--d:${i * 80}"><h4>${t}</h4><p class="hint">${x}</p></div>`).join('');
+    $('t-variables').innerHTML = '<tr><th>Variable</th><th>Tipo</th><th>Nivel</th><th>Codificación verificada</th><th class="num">Válidos</th><th class="num">Distintos</th></tr>' +
+      d.clasificacion.map(v => `<tr><td><b style="font-weight:600">${v.variable}</b></td><td>${v.tipo}</td><td>${v.nivel}</td><td>${v.codificacion_verificada}</td><td class="num">${nf(v.validos)}</td><td class="num">${nf(v.distintos)}</td></tr>`).join('');
+    $('f-poblacion').textContent = `La meta de 100.000 registros no se cumplió: se recibieron ${nf(p.recibidos)} (1.000 por mes, sin septiembre) y ${nf(d.n)} cumplen los criterios. ${nf(p.edad_cero_cedula)} cédulas tenían la edad en 0 y ${nf(p.nit)} registros eran empresas. El ${pc(p.postpago_elegibles)} de los elegibles es postpago.`;
+  }
+
+  // ---------- DATOS AGRUPADOS (cálculo en vivo, misma lógica que el notebook 01) ----------
+  let MES = 'todos';
+  const freqs = () => (MES === 'todos' ? D.descriptiva.cfm_frecuencias : D.descriptiva.por_mes[MES].cfm_frecuencias);   // [valor, conteo]
+  const nombreMes = () => (MES === 'todos' ? 'Todos los meses' : D.descriptiva.por_mes[MES].nombre);
+  const sturges = n => 1 + 3.322 * Math.log10(n);
+  function exactasDe(fr) {             // mismas definiciones que pandas en el notebook 01
+    const a = []; fr.forEach(([v, c]) => { for (let i = 0; i < c; i++) a.push(v); });
+    const n = a.length, media = a.reduce((s, v) => s + v, 0) / n;
+    const q = p => { const pos = (n - 1) * p, lo = Math.floor(pos); return lo + 1 < n ? a[lo] + (pos - lo) * (a[lo + 1] - a[lo]) : a[lo]; };
+    const top = fr.reduce((b, x) => (x[1] > b[1] ? x : b), fr[0]);
+    const varianza = a.reduce((s, v) => s + (v - media) ** 2, 0) / (n - 1), sd = Math.sqrt(varianza);
+    const Q3 = q(0.75);
+    return { n, media, mediana: q(0.5), moda: top[0], Q1: q(0.25), Q2: q(0.5), Q3, varianza, desviacion: sd, cv: sd / media * 100,
+      ceros: a.filter(v => v === 0).length, top_pct: top[1] / n, sobre_Q3: a.filter(v => v > Q3).length };
+  }
+  function setupFiltro() {
+    const todos = (D.preparacion.estratos || []).map(e => e.mes);
+    const opciones = [['todos', 'Todos'], ...todos.map(m => [m, (D.descriptiva.por_mes[m] || { nombre: (D.preparacion.estratos.find(e => e.mes === m) || {}).nombre || m }).nombre.slice(0, 3)])];
+    $('filtro-mes').innerHTML = opciones.map(([m, t]) => { const hay = m === 'todos' || D.descriptiva.por_mes[m];
+      return `<button type="button" class="pill${hay ? '' : ' vacio'}" data-mes="${m}" aria-pressed="${m === MES}" ${hay ? '' : 'disabled title="Sin registros ese mes"'}><span class="fill"></span><span>${t}</span></button>`; }).join('');
+    $('filtro-mes').querySelectorAll('button[data-mes]').forEach(b => b.addEventListener('click', () => {
+      if (b.disabled) return; MES = b.dataset.mes;
+      $('filtro-mes').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x.dataset.mes === MES));
+      const k = Math.round(sturges(exactasDe(freqs()).n)); $('k-slider').value = k; $('k-out').textContent = k;
+      renderAgrupados(k); renderProporciones();
+    }));
+  }
+  function agrupar(k) {
+    const fr = freqs(), n = fr.reduce((a, [, c]) => a + c, 0);
+    const xmin = fr[0][0], xmax = fr[fr.length - 1][0], R = xmax - xmin, A = Math.ceil(R / k);
+    const L = [...Array(k)].map((_, i) => xmin + i * A), U = L.map(l => l + A), m = L.map((l, i) => (l + U[i]) / 2);
+    const f = Array(k).fill(0);
+    fr.forEach(([v, c]) => { f[Math.min(Math.floor((v - xmin) / A), k - 1)] += c; });
+    const F = []; f.reduce((a, b, i) => (F[i] = a + b), 0);
+    const Fant = i => (i ? F[i - 1] : 0);
+    const sfm = f.reduce((a, fi, i) => a + fi * m[i], 0), media = sfm / n;
+    const cuantil = p => { const pos = p * n; const i = F.findIndex(x => x >= pos); return { p, pos, i, L: L[i], Fa: Fant(i), f: f[i], valor: L[i] + (pos - Fant(i)) / f[i] * A }; };
+    const Q1 = cuantil(0.25), Q2 = cuantil(0.5), Q3 = cuantil(0.75);
+    const im = f.indexOf(Math.max(...f)), fp = im > 0 ? f[im - 1] : 0, fn = im < k - 1 ? f[im + 1] : 0, d1 = f[im] - fp, d2 = f[im] - fn;
+    const unica = f.filter(x => x === f[im]).length === 1;
+    const moda = (d1 + d2) > 0 && unica ? L[im] + d1 / (d1 + d2) * A : null;
+    const scuad = f.reduce((a, fi, i) => a + fi * (m[i] - media) ** 2, 0), varianza = scuad / (n - 1), sd = Math.sqrt(varianza);
+    return { k, n, xmin, xmax, R, A, L, U, m, f, F, sfm, media, Q1, Q2, Q3, moda, im, fp, fn, d1, d2, scuad, varianza, sd, cv: sd / media * 100 };
+  }
+  let G, EX;
+  function setupAgrupados() {
+    const g0 = D.descriptiva.agrupados, sl = $('k-slider');
+    const upd = () => { $('k-out').textContent = sl.value; renderAgrupados(+sl.value); };
+    sl.addEventListener('input', upd);
+    $('k-reset').addEventListener('click', () => { sl.value = Math.round(sturges(exactasDe(freqs()).n)); upd(); });
+    setupFiltro();
+    renderAgrupados(g0.k);
+  }
+  function renderAgrupados(k) {
+    G = agrupar(k);
+    const n = G.n, kS = sturges(n), g0 = { k: Math.round(kS), k_sturges: kS };
+    EX = exactasDe(freqs());
+    $('k-nota').textContent = k === g0.k ? `k = ${k} es el valor de Sturges (1 + 3,322·log₁₀ ${nf(n)} = ${nf(g0.k_sturges, 3)}).`
+      : `Con k = ${k} la amplitud pasa a $${nf(G.A)}. Sturges sugiere k = ${g0.k}.`;
+    $('filtro-nota').textContent = MES === 'todos' ? `Mostrando los ${nf(n)} registros elegibles de los 9 meses. Afecta a datos agrupados, medidas y proporciones.`
+      : `Mostrando ${nf(n)} registros de ${nombreMes().toLowerCase()}. Con menos datos, Sturges sugiere menos clases (k = ${g0.k}).`;
+    ['chip-medidas', 'chip-proporciones'].forEach(id => { $(id).textContent = `Filtro: ${nombreMes()} · cambiar`; });
+    $('pasos-agrupados').innerHTML = [
+      ['Rango', 'Distancia entre el máximo y el mínimo válidos', `R = X<sub>max</sub> − X<sub>min</sub> = ${nf(G.xmax)} − ${nf(G.xmin)} = <span class="res">${nf(G.R)}</span>`],
+      ['Número de clases (Sturges)', 'Orientación inicial; se redondea al entero', `k ≈ 1 + 3,322·log<sub>10</sub>(${nf(n)}) = ${nf(g0.k_sturges, 3)} → <span class="res">k = ${g0.k}</span>${k !== g0.k ? ` · usando k = ${k}` : ''}`],
+      ['Amplitud', 'Redondeada hacia arriba al peso, para que k·A cubra el rango', `A = ⌈R / k⌉ = ⌈${nf(G.R)} / ${k}⌉ = <span class="res">${nf(G.A)}</span>`],
+      ['Marcas de clase', 'Punto medio de cada intervalo [L, U)', `m<sub>i</sub> = (L<sub>i</sub> + U<sub>i</sub>) / 2 · por ejemplo m<sub>${G.im + 1}</sub> = (${nf(G.L[G.im])} + ${nf(G.U[G.im])}) / 2 = <span class="res">${nf(G.m[G.im])}</span>`],
+    ].map(([t, h, f], i) => `<div class="paso"><span class="num">${i + 1}</span><div><h4 style="font-size:19px">${t}</h4><p class="hint">${h}</p><div class="formula">${f}</div></div></div>`).join('');
+    $('t-frecuencias').innerHTML = '<tr><th>Clase</th><th class="num">L<sub>i</sub></th><th class="num">U<sub>i</sub></th><th class="num">Marca m<sub>i</sub></th><th class="num">f<sub>i</sub></th><th class="num">h<sub>i</sub></th><th class="num">F<sub>i</sub></th><th class="num">H<sub>i</sub></th><th></th></tr>' +
+      G.f.map((fi, i) => `<tr class="${i === G.im ? 'destacada' : ''}"><td>${i + 1}</td><td class="num">${nf(G.L[i])}</td><td class="num">${nf(G.U[i])}</td><td class="num">${nf(G.m[i], 1)}</td><td class="num">${nf(fi)}</td><td class="num">${nf(fi / n, 4)}</td><td class="num">${nf(G.F[i])}</td><td class="num">${nf(G.F[i] / n, 4)}</td><td style="width:16%"><div class="bar"><div style="width:${100 * fi / Math.max(...G.f)}%;background:${i === G.im ? C.coral : C.navy}"></div></div></td></tr>`).join('') +
+      `<tr><td><b>Total</b></td><td></td><td></td><td></td><td class="num"><b>${nf(n)}</b></td><td class="num"><b>${nf(G.f.reduce((a, b) => a + b, 0) / n, 4)}</b></td><td></td><td></td><td></td></tr>`;
+    const xs = G.m;
+    Plotly.react('p-hist', [
+      { type: 'bar', x: xs, y: G.f, width: G.A * 0.98, marker: { color: G.f.map((_, i) => i === G.im ? C.coral : C.navy) }, name: 'Histograma',
+        customdata: G.L.map((l, i) => [l, G.U[i]]), hovertemplate: '[%{customdata[0]:,.0f}, %{customdata[1]:,.0f})<br>f = %{y:,}<extra></extra>' },
+      { type: 'scatter', mode: 'lines+markers', x: [G.m[0] - G.A, ...xs, G.m[G.k - 1] + G.A], y: [0, ...G.f, 0], name: 'Polígono',
+        line: { color: C.aqua, width: 2 }, marker: { size: 6 }, hovertemplate: 'marca %{x:,.0f}<br>f = %{y:,}<extra></extra>' }],
+      L2({ showlegend: true, legend: { orientation: 'h', y: 1.15, font: { color: C.ink } }, xaxis: { gridcolor: C.rule, title: { text: 'Cargo fijo (COP)', font: { size: 12 } }, tickformat: ',.0f' },
+        yaxis: { gridcolor: C.rule, title: { text: 'Frecuencia', font: { size: 12 } } } }), cfg);
+    Plotly.react('p-ojiva', [{ type: 'scatter', mode: 'lines+markers', x: [G.L[0], ...G.U], y: [0, ...G.F.map(v => v / n)], line: { color: C.navy, width: 2, shape: 'linear' },
+      fill: 'tozeroy', fillcolor: 'rgba(48,63,128,0.08)', hovertemplate: 'hasta %{x:,.0f}: %{y:.1%}<extra></extra>' }],
+      L2({ xaxis: { gridcolor: C.rule, tickformat: ',.0f', title: { text: 'Ojiva · frecuencia relativa acumulada', font: { size: 12 } } }, yaxis: { gridcolor: C.rule, tickformat: '.0%', range: [0, 1.05] },
+        shapes: [0.25, 0.5, 0.75].map(p => ({ type: 'line', x0: G.L[0], x1: G.U[G.k - 1], y0: p, y1: p, line: { color: C.coral, dash: 'dot', width: 1 } })) }), cfg);
+    const pctModal = G.f[G.im] / n, ext = { valor_mas_frecuente_pct: EX.top_pct };
+    $('qa-agrupados').innerHTML = qa('¿Qué extensión de cargos y qué intervalos permiten describir grupos comercialmente relevantes? (5.4.1)',
+      `Los cargos van de $${nf(G.xmin)} a $${nf(G.xmax)} (R = $${nf(G.R)}). Con ${k} clases de $${nf(G.A)}, la clase [${nf(G.L[G.im])}, ${nf(G.U[G.im])}) concentra el ${pc(pctModal)} de los registros: el grupo comercial dominante. Las clases extremas son nichos de pocos registros.`,
+      'Identificar el plan masivo que define a la base y los nichos de cargo bajo o alto que merecen campañas diferenciadas.') +
+      qa('¿Qué proporción de registros se ubica en cada intervalo o no supera un límite? (5.4.2)',
+        `Hasta $${nf(G.U[G.im])} se acumula el ${pc(G.F[G.im] / n)} de los registros; por encima solo queda el ${pc(1 - G.F[G.im] / n)}. Un solo valor exacto, $${nf(EX.moda)}, reúne el ${pc(ext.valor_mas_frecuente_pct)} de la selección.`,
+        'Dimensionar cuántos registros quedan por encima de un umbral de cargo antes de diseñar una oferta de upgrade.');
+    renderMedidas();
+  }
+
+  // ---------- MEDIDAS ----------
+  function renderMedidas() {
+    const ex = EX, n = G.n, A = G.A;
+    const cq = (q, nom, j) => `${nom} = L + [(${j}n/4 − F<sub>i−1</sub>) / f<sub>i</sub>]·A = ${nf(q.L)} + [(${nf(q.pos, 1)} − ${nf(q.Fa)}) / ${nf(q.f)}]·${nf(A)} = <span class="res">${nf(q.valor, 1)}</span>`;
+    const tarjetas = [
+      { t: 'Media aritmética', s: '5.5.1', v: G.media, e: ex.media, f: `x̄ ≈ Σ f<sub>i</sub>·m<sub>i</sub> / n = ${nf(G.sfm)} / ${nf(n)} = <span class="res">${nf(G.media, 1)}</span>`,
+        q: '¿Cuál es el cargo fijo promedio de los registros seleccionados?', r: `En promedio, $${nf(ex.media)} al mes (agrupado: $${nf(G.media)}). ${EX.ceros ? `Las ${nf(EX.ceros)} líneas con cargo 0 lo bajan respecto de la mediana.` : 'No hay líneas con cargo 0 en esta selección.'}`,
+        u: 'Comparar niveles medios entre grupos, considerando el efecto de los valores extremos.' },
+      { t: 'Mediana', s: '5.5.2', v: G.Q2.valor, e: ex.mediana, f: cq(G.Q2, 'Me', 2),
+        q: '¿Qué cargo fijo marca el centro de la distribución?', r: `El registro central paga $${nf(ex.mediana)}; con la interpolación agrupada, $${nf(G.Q2.valor)}.`,
+        u: 'Una referencia menos sensible a extremos para comparar niveles de cargo.' },
+      { t: 'Moda', s: '5.5.3', v: G.moda, e: ex.moda, f: G.moda == null ? 'No hay una clase modal única: se reporta la limitación.' :
+          `Mo = L + [d<sub>1</sub> / (d<sub>1</sub> + d<sub>2</sub>)]·A = ${nf(G.L[G.im])} + [${nf(G.d1)} / (${nf(G.d1)} + ${nf(G.d2)})]·${nf(A)} = <span class="res">${nf(G.moda, 1)}</span>`,
+        q: '¿Qué intervalo de cargo fijo es el más frecuente?', r: `La clase modal es [${nf(G.L[G.im])}, ${nf(G.U[G.im])}). El valor exacto más repetido es $${nf(ex.moda)} (${pc(EX.top_pct)} de los registros).`,
+        u: 'Reconocer el nivel de cargo predominante: el plan de referencia de la base.' },
+      { t: 'Primer cuartil', s: '5.6.1', v: G.Q1.valor, e: ex.Q1, f: cq(G.Q1, 'Q<sub>1</sub>', 1),
+        q: '¿Hasta qué cargo se concentra aproximadamente el 25 % de los registros?', r: `Agrupado: hasta $${nf(G.Q1.valor)}. Exacto: $${nf(ex.Q1)}${EX.top_pct > 0.5 ? ', porque más de la mitad de la selección tiene el mismo valor' : ''}.`,
+        u: 'Describir el grupo de cargos inferiores.' },
+      { t: 'Segundo cuartil', s: '5.6.2', v: G.Q2.valor, e: ex.Q2, f: cq(G.Q2, 'Q<sub>2</sub>', 2),
+        q: '¿Qué cargo constituye el límite central?', r: `Q₂ coincide con la mediana: $${nf(G.Q2.valor)} agrupado, $${nf(ex.Q2)} exacto.`, u: 'Comparar la distribución a ambos lados del centro.' },
+      { t: 'Tercer cuartil', s: '5.6.3', v: G.Q3.valor, e: ex.Q3, f: cq(G.Q3, 'Q<sub>3</sub>', 3),
+        q: '¿Hasta qué cargo se concentra aproximadamente el 75 %?', r: `Agrupado: $${nf(G.Q3.valor)}. Por encima de Q₃ exacto ($${nf(ex.Q3)}) hay ${nf(EX.sobre_Q3)} registros (${pc(EX.sobre_Q3 / n)}).`,
+        u: 'Describir los cargos superiores y el grupo situado por encima de Q₃: candidatos a retención de alto valor.' },
+      { t: 'Varianza muestral', s: '5.7.1', v: G.varianza, e: ex.varianza, f: `s² ≈ Σ f<sub>i</sub>(m<sub>i</sub> − x̄)² / (n − 1) = ${nf(G.scuad)} / ${nf(n - 1)} = <span class="res">${nf(G.varianza)}</span>`,
+        q: '¿Qué dispersión cuadrática presentan los cargos fijos?', r: `s² = ${nf(ex.varianza)} pesos² (agrupada: ${nf(G.varianza)}). Está en unidades al cuadrado: se interpreta mejor con su raíz.`,
+        u: 'Evaluar la heterogeneidad de los niveles de cargo entre grupos.' },
+      { t: 'Desviación estándar', s: '5.7.2', v: G.sd, e: ex.desviacion, f: `s = √s² = √${nf(G.varianza)} = <span class="res">${nf(G.sd, 1)}</span>`,
+        q: '¿Cuánto varían los cargos respecto del promedio, en pesos?', r: `Un registro típico se aleja unos $${nf(ex.desviacion)} del promedio.`, u: 'Comunicar la dispersión en pesos, una escala directamente interpretable.' },
+      { t: 'Coeficiente de variación', s: '5.7.3', v: G.cv, e: ex.cv, f: `CV = (s / x̄)·100 = (${nf(G.sd, 1)} / ${nf(G.media, 1)})·100 = <span class="res">${nf(G.cv, 1)} %</span>`,
+        q: '¿Qué grupos presentan mayor variación relativa de su cargo fijo?', r: `En ${MES === 'todos' ? 'toda la muestra' : nombreMes().toLowerCase()}, CV = ${nf(ex.cv, 1)} %${ex.cv < 20 ? ': dispersión baja' : ''}. Por segmentos (Parte 2), el grupo con huella básica llega a ${nf(Math.max(...D.ciencia.perfiles.map(p => p.cfm_cv)), 1)} %.`,
+        u: 'Comparar heterogeneidad entre grupos con promedios distintos.', pct: true },
+    ];
+    $('tarjetas-medidas').innerHTML = tarjetas.map((t, i) => `<div class="card medida sube" style="--d:${(i % 3) * 80}">
+      <h3>${t.s} · ${t.t}</h3><span class="val">${t.v == null ? '—' : (t.pct ? `${nf(t.v, 1)} %` : nf(t.v, t.t.startsWith('Varianza') ? 0 : 1))}</span>
+      <span class="cmp">exacto: ${t.pct ? `${nf(t.e, 1)} %` : nf(t.e, t.t.startsWith('Varianza') ? 0 : 1)} · diferencia ${t.v == null ? '—' : nf(100 * (t.v - t.e) / t.e, 1) + ' %'}</span>
+      <div class="formula">${t.f}</div><div class="qa">${qa(t.q, t.r, t.u)}</div></div>`).join('');
+    const marcas = [['Q₁', G.Q1.valor, C.ink2], ['Mediana', G.Q2.valor, C.navy], ['Q₃', G.Q3.valor, C.ink2], ['Media', G.media, C.coral], ['Moda', G.moda, C.aqua]].filter(m => m[1] != null);
+    Plotly.react('p-recta', [
+      { type: 'scatter', mode: 'markers+text', x: marcas.map(m => m[1]), y: marcas.map((_, i) => (i % 2 ? 0.55 : -0.55)), text: marcas.map(m => `${m[0]}<br>$${nf(m[1])}`),
+        textposition: marcas.map((_, i) => (i % 2 ? 'top center' : 'bottom center')), marker: { size: 14, symbol: 'diamond', color: marcas.map(m => m[2]) },
+        textfont: { color: C.ink, size: 12 }, hovertemplate: '%{text}<extra></extra>' },
+      { type: 'scatter', mode: 'lines', x: [G.L[G.im], G.U[G.im]], y: [0, 0], line: { color: C.coral, width: 10 }, hoverinfo: 'skip', opacity: 0.35 }],
+      L2({ xaxis: { gridcolor: C.rule, tickformat: ',.0f', range: [Math.min(...marcas.map(m => m[1])) - G.A * 0.6, Math.max(...marcas.map(m => m[1])) + G.A * 0.6] },
+        yaxis: { visible: false, range: [-2, 2] }, margin: { l: 20, r: 20, t: 10, b: 36 } }), cfg);
+    const filas = [['Media', G.media, ex.media], ['Mediana', G.Q2.valor, ex.mediana], ['Moda', G.moda, ex.moda], ['Q₁', G.Q1.valor, ex.Q1], ['Q₃', G.Q3.valor, ex.Q3],
+      ['Varianza', G.varianza, ex.varianza], ['Desviación estándar', G.sd, ex.desviacion], ['Coeficiente de variación (%)', G.cv, ex.cv]];
+    $('t-comparacion').innerHTML = '<tr><th>Medida</th><th class="num">Agrupada (k = ' + G.k + ')</th><th class="num">Exacta</th><th class="num">Diferencia</th><th class="num">Diferencia %</th></tr>' +
+      filas.map(([nme, a, e]) => `<tr><td>${nme}</td><td class="num">${nf(a, 1)}</td><td class="num">${nf(e, 1)}</td><td class="num">${a == null ? '—' : nf(a - e, 1)}</td><td class="num">${a == null ? '—' : nf(100 * (a - e) / e, 2) + ' %'}</td></tr>`).join('');
+    $('f-medidas').textContent = `Las medidas agrupadas se acercan a las exactas (media: ${nf(100 * (G.media - ex.media) / ex.media, 1)} %), pero los cuartiles no: con el ${pc(EX.top_pct)} de los registros en un solo valor ($${nf(EX.moda)}), los cuartiles exactos tienden a coincidir y la interpolación, que supone datos uniformes dentro de la clase, los separa artificialmente.`;
+  }
+
+  // ---------- ANTIGÜEDAD ----------
+  function renderAntiguedad() {
+    const a = D.descriptiva.antiguedad, t = D.descriptiva.antiguedad_tramos;
+    $('kpis-antig').innerHTML = [[nf(a.media, 1), 'Media (meses)', `n = ${nf(a.n)}`], [nf(a.mediana, 0), 'Mediana', 'meses'], [nf(a.moda), 'Moda', `${pc(a.pct_moda)} de los registros`],
+      [`${nf(a.Q1, 0)}–${nf(a.Q3, 0)}`, 'Q₁ – Q₃', 'meses'], [nf(a.desviacion, 1), 'Desviación', 'meses'], [`${nf(a.cv, 0)} %`, 'Coef. de variación', 'muy heterogénea']]
+      .map(([v, l, n]) => `<div class="kpi"><span class="v">${v}</span><span class="l">${l}</span><span class="n">${n}</span></div>`).join('');
+    Plotly.react('p-antig', [{ type: 'bar', x: t.map(r => r.tramo), y: t.map(r => r.f), text: t.map(r => pc(r.h)), textposition: 'outside',
+      marker: { color: t.map((_, i) => (i === 0 ? C.coral : C.navy)) }, textfont: { color: C.ink, size: 13 }, hovertemplate: '%{x}: %{y:,} registros<extra></extra>' }],
+      L2({ yaxis: { gridcolor: C.rule, range: [0, Math.max(...t.map(r => r.f)) * 1.18] }, bargap: 0.35 }), cfg);
+    const largo = t.slice(2).reduce((s, r) => s + r.f, 0);
+    $('qa-antig').innerHTML = qa('¿Cómo se distribuye la antigüedad de los registros y qué grupos podrían orientar estrategias de fidelización?',
+      `Muy sesgada a la derecha: la mediana es ${nf(a.mediana)} mes y el ${pc(t[0].h)} tiene entre 0 y 3 meses, mientras la media (${nf(a.media, 1)}) la arrastran pocas líneas de hasta ${nf(a.max)} meses. Dos grupos: líneas nuevas (0–3 meses) para bienvenida y retención temprana, y ${nf(largo)} líneas de más de un año para fidelización.`,
+      'Caracterizar la permanencia para decidir dónde poner el esfuerzo: retener líneas nuevas cuesta menos que recuperarlas.');
+  }
+
+  // ---------- REGRESIÓN ----------
+  function renderRegresion() {
+    const r = D.regresion, s = r.sumas, nube = r.nube;
+    const x0 = r.x_rango[0], x1 = r.x_rango[1];
+    Plotly.react('p-dispersion', [
+      { type: 'scatter', mode: 'markers', x: nube.map(p => p[0]), y: nube.map(p => p[1]), marker: { size: nube.map(p => 5 + 6 * Math.log10(p[2])), sizemode: 'diameter',
+        color: 'rgba(48,63,128,0.35)', line: { color: C.navy, width: 0.5 } }, customdata: nube.map(p => p[2]),
+        hovertemplate: 'antigüedad %{x} meses<br>cargo $%{y:,.0f}<br>%{customdata:,} registros<extra></extra>', name: 'Registros' },
+      { type: 'scatter', mode: 'lines', x: [x0, x1], y: [r.a + r.b * x0, r.a + r.b * x1], line: { color: C.coral, width: 3 }, name: 'Ŷ = a + bX',
+        hovertemplate: 'Ŷ = %{y:,.0f}<extra></extra>' }],
+      L2({ xaxis: { gridcolor: C.rule, title: { text: 'Antigüedad (meses)', font: { size: 12 } } }, yaxis: { gridcolor: C.rule, tickformat: ',.0f', title: { text: 'Cargo fijo (COP)', font: { size: 12 } } },
+        annotations: [{ x: x1 * 0.62, y: r.a + r.b * x1 * 0.62, text: `Ŷ = ${nf(r.a, 0)} − ${nf(-r.b, 2)}·X`, showarrow: true, ay: -40, font: { color: C.ink, size: 13 }, arrowcolor: C.coral }] }), cfg);
+    $('pasos-regresion').innerHTML = [
+      ['Sumas', `n = ${nf(s.n)} · Σx = ${nf(s.Sx)} · Σy = ${nf(s.Sy)} · Σxy = ${nf(s.Sxy)} · Σx² = ${nf(s.Sxx)} · Σy² = ${nf(s.Syy)}`],
+      ['Pendiente', `b = [nΣxy − ΣxΣy] / [nΣx² − (Σx)²] = ${nf(s.num)} / ${nf(s.den_x)} = <span class="res">${nf(r.b, 2)}</span>`],
+      ['Intercepto', `a = ȳ − b·x̄ = ${nf(s.ybar, 1)} − (${nf(r.b, 2)})·${nf(s.xbar, 2)} = <span class="res">${nf(r.a, 1)}</span>`],
+      ['Pearson', `r = [nΣxy − ΣxΣy] / √([nΣx² − (Σx)²][nΣy² − (Σy)²]) = <span class="res">${nf(r.r, 4)}</span>`],
+      ['Determinación', `R² = r² = (${nf(r.r, 4)})² = <span class="res">${nf(r.R2, 4)}</span>`],
+    ].map(([t, f], i) => `<div class="paso"><span class="num">${i + 1}</span><div><h4 style="font-size:18px">${t}</h4><div class="formula" style="font-size:16px">${f}</div></div></div>`).join('') +
+      `<p class="note">Validado con scipy.stats.linregress: pendiente ${nf(r.scipy.slope, 4)}, r ${nf(r.scipy.rvalue, 4)}. Diferencias menores a 10⁻⁹.</p>`;
+    $('t-sensibilidad').innerHTML = '<tr><th>Escenario</th><th class="num">n</th><th class="num">b</th><th class="num">r</th><th class="num">R²</th></tr>' +
+      r.sensibilidad.map(e => `<tr><td>${e.escenario}</td><td class="num">${nf(e.n)}</td><td class="num">${nf(e.b, 1)}</td><td class="num">${nf(e.r, 3)}</td><td class="num">${nf(e.R2, 3)}</td></tr>`).join('');
+    const bordes = r.residuos.bordes;
+    Plotly.react('p-residuos', [{ type: 'bar', x: bordes.slice(0, -1).map((b, i) => (b + bordes[i + 1]) / 2), y: r.residuos.hist, marker: { color: C.navy },
+      hovertemplate: 'residuo ≈ %{x:,.0f}<br>%{y:,} registros<extra></extra>' }],
+      L2({ bargap: 0.05, xaxis: { gridcolor: C.rule, tickformat: ',.0f', title: { text: 'Residuo eᵢ = yᵢ − ŷᵢ (COP)', font: { size: 12 } } } }), cfg);
+    $('qa-regresion').innerHTML = qa('¿Cómo cambia el cargo fijo estimado cuando aumenta un mes la antigüedad? (5.8)',
+      `Baja en promedio $${nf(-r.b, 2)} por cada mes adicional (Ŷ = ${nf(r.a, 0)} − ${nf(-r.b, 2)}·X). En 10 años serían unos $${nf(-r.b * 120)} menos: las líneas antiguas conservan planes más baratos. Sin las 45 líneas con cargo 0, la pendiente cae a ${nf(r.sensibilidad[1].b, 1)}.`,
+      'Explorar si la permanencia ayuda a describir diferencias de cargo; sugiere revisar planes antiguos como oportunidad de actualización. No demuestra causalidad.') +
+      qa('¿Qué dirección y fuerza tiene la asociación lineal entre antigüedad y cargo fijo? (5.9)',
+        `Negativa y débil: r = ${nf(r.r, 3)}. La antigüedad explica apenas el ${pc(r.R2)} de la variabilidad del cargo (R²). Con ${nf(r.residuos.atipicos)} residuos atípicos, el ajuste es sensible a extremos.`,
+        'La antigüedad sola no sirve para predecir el cargo de una línea; hay que combinarla con otras variables al segmentar.');
+    // 3D conjunta: tramos de antigüedad × rangos de cargo
+    const tramosA = [[0, 3, '0–3'], [4, 12, '4–12'], [13, 36, '13–36'], [37, 120, '37–120'], [121, 1e9, '>120']];
+    const rangos = [[0, 1, '$0'], [1, 30000, '<$30 mil'], [30000, 40185, '$30–40 mil'], [40185, 40186, '$40.185'], [40186, 50000, '$40–50 mil'], [50000, 1e9, '≥$50 mil']];
+    const cnt = tramosA.map(() => rangos.map(() => 0));
+    nube.forEach(([x, y, c]) => { const i = tramosA.findIndex(t => x >= t[0] && x <= t[1]); const j = rangos.findIndex(g => y >= g[0] && y < g[1]); if (i >= 0 && j >= 0) cnt[i][j] += c; });
+    const bars = [];
+    cnt.forEach((fila, i) => fila.forEach((c, j) => { if (c > 0) bars.push({ x: i, y: j, w: 0.6, h: Math.log10(c + 1), val: Math.log10(c + 1), text: `Antigüedad ${tramosA[i][2]} meses · cargo ${rangos[j][2]}<br>${nf(c)} registros` }); }));
+    const mesh = prismas(bars, { colorscale: SEQ });
+    Plotly.react('p-conjunta', [mesh], {
+      paper_bgcolor: 'rgba(0,0,0,0)', separators: ',.', font, hoverlabel, margin: { l: 0, r: 0, t: 0, b: 0 },
+      scene: { xaxis: ax3('Antigüedad (meses)', { tickvals: tramosA.map((_, i) => i), ticktext: tramosA.map(t => t[2]) }),
+        yaxis: ax3('Cargo fijo', { tickvals: rangos.map((_, j) => j), ticktext: rangos.map(g => g[2]) }),
+        zaxis: ax3('Registros (log₁₀)', { tickvals: [0, 1, 2, 3], ticktext: ['1', '10', '100', '1.000'] }),
+        camera: { eye: { x: 1.6, y: -1.6, z: 1.0 } }, aspectmode: 'manual', aspectratio: { x: 1.1, y: 1.2, z: 0.7 } } }, cfg);
+  }
+
+  // prismas 3D (barras)
+  function cubo(x0, y0, w, h) {
+    const x1 = x0 + w, y1 = y0 + w;
+    return { x: [x0, x1, x1, x0, x0, x1, x1, x0], y: [y0, y0, y1, y1, y0, y0, y1, y1], z: [0, 0, 0, 0, h, h, h, h],
+      i: [7, 0, 0, 0, 4, 4, 6, 6, 4, 0, 3, 2], j: [3, 4, 1, 2, 5, 6, 5, 2, 0, 1, 6, 3], k: [0, 7, 2, 3, 6, 7, 1, 1, 5, 5, 7, 6] };
+  }
+  function prismas(lista, opts) {
+    const m = { x: [], y: [], z: [], i: [], j: [], k: [], text: [], intensity: [] };
+    lista.forEach(b => {
+      const c = cubo(b.x - b.w / 2, b.y - b.w / 2, b.w, b.h), off = m.x.length;
+      m.x.push(...c.x); m.y.push(...c.y); m.z.push(...c.z);
+      m.i.push(...c.i.map(v => v + off)); m.j.push(...c.j.map(v => v + off)); m.k.push(...c.k.map(v => v + off));
+      for (let q = 0; q < 8; q++) { m.text.push(b.text); m.intensity.push(b.val ?? b.h); }
+    });
+    return Object.assign({ type: 'mesh3d', x: m.x, y: m.y, z: m.z, i: m.i, j: m.j, k: m.k, text: m.text, hovertemplate: '%{text}<extra></extra>', flatshading: true,
+      lighting: { ambient: 0.62, diffuse: 0.75, specular: 0.08, roughness: 0.8 }, lightposition: { x: 1000, y: -500, z: 2000 } },
+      opts.color ? { color: opts.color } : { intensity: m.intensity, colorscale: opts.colorscale, showscale: false }, opts.extra || {});
+  }
+
+  // ---------- PROPORCIONES ----------
+  function renderProporciones() {
+    const p = MES === 'todos' ? D.descriptiva.proporciones : D.descriptiva.por_mes[MES].proporciones, pm = D.ciencia.prop_medidos;
+    const items = [['Banca digital', 'BAN_BANCA'], ['Billetera', 'BAN_BILLETERA'], ['Pagos en línea', 'BAN_PAGOS_ONLINE'], ['Banca y pagos', 'BANCA_Y_PAGOS'], ['Restricción de contacto', 'BAN_SUPRESION_I']];
+    const nom = items.map(i => i[0]);
+    Plotly.react('p-proporciones', [
+      { type: 'bar', orientation: 'h', name: MES === 'todos' ? 'Toda la muestra (9 meses)' : nombreMes(), y: nom, x: items.map(i => p[i[1]].p), text: items.map(i => pc(p[i[1]].p)),
+        textposition: 'outside', cliponaxis: false, marker: { color: items.map(i => (i[1] === 'BAN_SUPRESION_I' ? C.coral : C.navy)) }, textfont: { color: C.ink, size: 12 },
+        customdata: items.map(i => [p[i[1]].f, p[i[1]].n]), hovertemplate: '%{y}: %{x:.1%}<br>%{customdata[0]:,} de %{customdata[1]:,}<extra></extra>' },
+      ...(MES !== 'todos' ? [] : [{ type: 'bar', orientation: 'h', name: 'Solo meses con huella medida (ene–jun)', y: nom.slice(0, 3), x: items.slice(0, 3).map(i => pm[i[1]]), text: items.slice(0, 3).map(i => pc(pm[i[1]])),
+        textposition: 'outside', cliponaxis: false, marker: { color: C.aqua }, textfont: { color: C.ink, size: 12 }, hovertemplate: '%{y} (ene–jun): %{x:.1%}<extra></extra>' }])],
+      L2({ barmode: 'group', showlegend: true, legend: { orientation: 'h', y: 1.14, font: { color: C.ink } }, margin: { l: 150, r: 40, t: 10, b: 36 },
+        xaxis: { gridcolor: C.rule, tickformat: '.0%', range: [0, 1] }, yaxis: { autorange: 'reversed' }, bargap: 0.25, bargroupgap: 0.05 }), cfg);
+    Plotly.react('p-restriccion', [{ type: 'bar', x: ['Contactables', 'Con restricción'], y: [p.BANCA_EN_CONTACTABLES.p, p.BANCA_EN_RESTRINGIDOS.p],
+      text: [`${pc(p.BANCA_EN_CONTACTABLES.p)} de ${nf(p.BANCA_EN_CONTACTABLES.n)}`, `${pc(p.BANCA_EN_RESTRINGIDOS.p)} de ${nf(p.BANCA_EN_RESTRINGIDOS.n)}`], textposition: 'outside',
+      marker: { color: [C.aqua, C.gray] }, textfont: { color: C.ink, size: 13 }, hovertemplate: '%{x}: %{y:.1%} con banca digital<extra></extra>' }],
+      L2({ yaxis: { gridcolor: C.rule, tickformat: '.0%', range: [0, Math.max(0.4, (p.BANCA_EN_CONTACTABLES.p || 0) * 1.2)] }, bargap: 0.45 }), cfg);
+    const cards = [
+      ['5.3.3 · Banca digital', '¿Qué proporción de registros presenta el indicador de banca digital activo?', `${pc(p.BAN_BANCA.p)} (${nf(p.BAN_BANCA.f)} de ${nf(p.BAN_BANCA.n)}). ${MES === 'todos' ? `En los meses en que la huella sí se midió, ${pc(pm.BAN_BANCA)}.` : (D.ciencia.meses_medidos.includes(MES) ? 'En este mes la huella sí se midió.' : 'Ojo: en este mes la huella digital no se midió, así que el valor no es comparable.')}`, 'Caracterizar afinidades digitales para segmentación.'],
+      ['5.3.4 · Billeteras digitales', '¿Qué proporción presenta afinidad hacia billeteras digitales?', `${pc(p.BAN_BILLETERA.p)} (${nf(p.BAN_BILLETERA.f)} registros)${MES === 'todos' ? `; ${pc(pm.BAN_BILLETERA)} en meses medidos` : ''}. Es la preferencia menos frecuente.`, 'Distinguir perfiles de interés en servicios financieros digitales: un nicho pequeño.'],
+      ['5.3.5 · Pagos en línea', '¿Qué proporción presenta simultáneamente banca digital y pagos en línea activos?', `${pc(p.BANCA_Y_PAGOS.p)} (${nf(p.BANCA_Y_PAGOS.f)} registros). ${p.BAN_BANCA.f ? `De quienes tienen banca, el ${pc(p.BANCA_Y_PAGOS.f / p.BAN_BANCA.f)} también tiene pagos en línea.` : ''}`, 'Describir coincidencias de intereses sin inferir transacciones: una oferta combinada llegaría a casi todo el grupo de banca.'],
+      ['5.3.6 · Restricción de contacto', '¿Qué proporción presenta esta restricción y cómo condiciona una selección para campañas?', `${pc(p.BAN_SUPRESION_I.p)} tiene la restricción activa: solo ${nf(p.CONTACTABLES.f)} registros (${pc(p.CONTACTABLES.p)}) son contactables por mensajes. Entre ellos, la banca digital sube a ${pc(p.BANCA_EN_CONTACTABLES.p)}.`, 'Separar a quienes se puede contactar antes de calcular cualquier audiencia: la restricción no es una preferencia de navegación.'],
+    ];
+    $('qa-proporciones').innerHTML = cards.map(([t, q, r, u], i) => `<div class="card sube" style="--d:${(i % 2) * 100}"><h3>${t}</h3><div class="qa" style="border:0;margin:0;padding:0">${qa(q, r, u)}</div></div>`).join('');
+  }
+
+  // ---------- CONTEO ----------
+  function renderConteo() {
+    const pr = D.probabilidad, per = pr.perfiles;
+    const vx = [], vy = [], vz = [], txt = [], sz = [], col = [];
+    per.forEach(p => { vx.push(+p.banca); vy.push(+p.billetera); vz.push(+p.pagos); txt.push(`${p.etiqueta}<br>${nf(p.registros)} registros (${pc(p.pct)})`);
+      sz.push(10 + 7 * Math.sqrt(p.registros) / Math.sqrt(Math.max(...per.map(q => q.registros))) * 6); col.push(p.etiqueta === 'Ninguna' ? C.gray : (p.banca && p.billetera && p.pagos ? C.coral : C.navy)); });
+    const aristas = { x: [], y: [], z: [] };
+    [[0,0,0,1,0,0],[0,0,0,0,1,0],[0,0,0,0,0,1],[1,0,0,1,1,0],[1,0,0,1,0,1],[0,1,0,1,1,0],[0,1,0,0,1,1],[0,0,1,1,0,1],[0,0,1,0,1,1],[1,1,0,1,1,1],[1,0,1,1,1,1],[0,1,1,1,1,1]]
+      .forEach(([a, b, c, d, e, f]) => { aristas.x.push(a, d, null); aristas.y.push(b, e, null); aristas.z.push(c, f, null); });
+    Plotly.react('p-cubo', [
+      { type: 'scatter3d', mode: 'lines', ...aristas, line: { color: '#c9d1e3', width: 4 }, hoverinfo: 'skip' },
+      { type: 'scatter3d', mode: 'markers+text', x: vx, y: vy, z: vz, text: per.map(p => nf(p.registros)), textposition: 'top center', textfont: { color: C.ink, size: 13, family: 'Outfit' },
+        marker: { size: sz, color: col, opacity: 0.9, line: { color: '#fff', width: 1 } }, customdata: txt, hovertemplate: '%{customdata}<extra></extra>' }],
+      { paper_bgcolor: 'rgba(0,0,0,0)', separators: ',.', font, hoverlabel, margin: { l: 0, r: 0, t: 0, b: 0 }, showlegend: false,
+        scene: { xaxis: ax3('Banca', { tickvals: [0, 1], ticktext: ['No', 'Sí'], range: [-0.25, 1.25] }), yaxis: ax3('Billetera', { tickvals: [0, 1], ticktext: ['No', 'Sí'], range: [-0.25, 1.25] }),
+          zaxis: ax3('Pagos', { tickvals: [0, 1], ticktext: ['No', 'Sí'], range: [-0.25, 1.35] }), camera: { eye: { x: 1.7, y: 1.4, z: 1.0 } }, aspectmode: 'cube' } }, cfg);
+    $('conteo-pasos').innerHTML = `<h3>Paso a paso</h3>
+      <div class="paso"><span class="num">1</span><div><h4 style="font-size:19px">Principio multiplicativo</h4><div class="formula">Total = n<sub>1</sub>·n<sub>2</sub>·n<sub>3</sub> = 2·2·2 = <span class="res">${pr.total_teorico}</span> perfiles</div>
+        <div class="qa">${qa('¿Cuántos perfiles teóricos pueden definirse al combinar los tres indicadores?', `${pr.total_teorico} perfiles teóricos (${pr.con_supresion} si se suma la restricción de contacto). Los ${pr.observados} aparecen en la muestra, pero ${pc(per[0].pct)} de los registros está en «${per[0].etiqueta}».`, 'Organizar las combinaciones antes de contrastarlas con los registros: muestra qué perfiles son masivos y cuáles son nicho.')}</div></div></div>
+      <div class="paso"><span class="num">2</span><div><h4 style="font-size:19px">Permutaciones</h4><div class="formula">P(3,3) = 3!/(3−3)! = <span class="res">${pr.P33}</span> · P(5,3) = 5!/2! = <span class="res">${pr.P53}</span></div>
+        <div class="orden">${pr.ordenes_A.map(o => `<span>${o.join(' → ')}</span>`).join('')}</div>
+        <div class="qa">${qa('¿De cuántas maneras pueden priorizarse campañas distintas?', `Las 3 campañas digitales admiten ${pr.P33} órdenes; con 5 campañas candidatas y 3 meses de calendario hay ${pr.P53} calendarios. Según las proporciones observadas, el orden sugerido es ${pr.orden_datos.join(' → ')}.`, 'Comparar órdenes posibles de ejecución sin confundir prioridad con pertenencia a un grupo.')}</div></div></div>
+      <div class="paso"><span class="num">3</span><div><h4 style="font-size:19px">Combinaciones</h4><div class="formula">C(5,3) = 5!/(3!·2!) = <span class="res">${pr.C53}</span> · C(${pr.K_piloto},10) ≈ <span class="res">10<sup>${nf(pr.C_piloto_log10, 2)}</sup></span></div>
+        <div class="qa">${qa('¿Cuántos grupos distintos de registros pueden seleccionarse para un escenario de campaña?', `Con ${pr.K_piloto} registros contactables con banca digital, hay unos 10<sup>${nf(pr.C_piloto_log10, 1)}</sup> grupos distintos de 10 para un piloto. Elegir 3 de 5 campañas sin orden da ${pr.C53} grupos (cada uno con 3! = 6 órdenes: 10·6 = ${pr.P53}).`, 'Dimensionar las alternativas de selección: hay tantas que la elección debe ser aleatoria o por reglas, nunca manual.')}</div></div></div>`;
+  }
+
+  // ---------- PROBABILIDAD (calculadora hipergeométrica en vivo) ----------
+  const lf = [0];
+  const logFact = n => { for (let i = lf.length; i <= n; i++) lf[i] = lf[i - 1] + Math.log(i); return lf[n]; };
+  const lC = (n, k) => (k < 0 || k > n ? -Infinity : logFact(n) - logFact(k) - logFact(n - k));
+  const pmf = (N, K, m, x) => Math.exp(lC(K, x) + lC(N - K, m - x) - lC(N, m));
+  function setupHiper() {
+    const pr = D.probabilidad, us = [...new Set(pr.conteos.map(c => c.universo))], ins = [...new Set(pr.conteos.map(c => c.indicador))];
+    $('h-universo').innerHTML = us.map(u => `<option>${u}</option>`).join('');
+    $('h-indicador').innerHTML = ins.map(u => `<option>${u}</option>`).join('');
+    ['h-universo', 'h-indicador', 'h-m', 'h-x'].forEach(id => $(id).addEventListener('input', renderHiper));
+    renderHiper();
+    const pb = pr.probs;
+    const filas = [['P(Banca)', 'P(Banca)'], ['P(Billetera)', 'P(Billetera)'], ['P(Pagos en línea)', 'P(Pagos)'], ['P(Banca ∩ Pagos)', 'P(Banca ∩ Pagos)'], ['P(Banca ∪ Pagos)', 'P(Banca ∪ Pagos)'],
+      ['P(al menos una financiera)', 'P(al menos una financiera)'], ['P(Pagos | Banca)', 'P(Pagos | Banca)'], ['P(Banca | contactable)', 'P(Banca | contactable)'], ['P(Banca | con restricción)', 'P(Banca | restringido)']];
+    $('t-probs').innerHTML = '<tr><th>Evento</th><th class="num">Probabilidad</th><th></th></tr>' + filas.map(([n, k]) => `<tr><td>${n}</td><td class="num">${nf(pb[k], 4)}</td><td style="width:30%"><div class="bar"><div style="width:${Math.min(100, 100 * pb[k] / 0.55)}%"></div></div></td></tr>`).join('');
+    const E = pr.escenarios.E, F = pr.escenarios.F;
+    $('qa-probabilidad').innerHTML = qa('¿Qué proporción de registros válidos presenta BAN_BANCA activo? (5.10.4)', `P(Banca) = ${nf(pr.probs['P(Banca)'] * pr.N)} / ${nf(pr.N)} = ${nf(pr.probs['P(Banca)'], 4)}: escogiendo un registro al azar, 6 o 7 de cada 100 tienen banca digital.`, 'Cuantificar afinidades sin interpretar navegación como compra.') +
+      qa('¿Qué probabilidad existe de seleccionar cierta cantidad de registros con una preferencia digital? (5.10.5)', `Al escoger ${E.m} registros al azar de los ${nf(E.N)}: P(X = 0) = ${nf(E.P0, 3)}, P(X ≥ 1) = ${nf(E.P_al_menos_1, 3)} y P(X ≥ 5) = ${nf(E.P_al_menos_5, 4)}; se esperan ${nf(E.esperado, 2)}. Si se escoge solo entre los ${nf(F.N)} contactables, P(X ≥ 5) sube a ${nf(F.P_al_menos_5, 3)} y se esperan ${nf(F.esperado, 1)}.`, 'Evaluar la composición de una selección antes de lanzarla: filtrar contactables multiplica los aciertos.');
+  }
+  function renderHiper() {
+    const pr = D.probabilidad, u = $('h-universo').value, ind = $('h-indicador').value;
+    const c = pr.conteos.find(r => r.universo === u && r.indicador === ind);
+    const N = c.N, K = c.K, mSl = $('h-m'); mSl.max = Math.min(100, N); const m = Math.min(+mSl.value, N);
+    const xSl = $('h-x'); xSl.max = m; const x = Math.min(+xSl.value, m);
+    $('h-m-out').textContent = m; $('h-x-out').textContent = x;
+    const lo = Math.max(0, m - (N - K)), hi = Math.min(m, K);
+    const dist = [...Array(m + 1)].map((_, i) => (i < lo || i > hi ? 0 : pmf(N, K, m, i)));
+    const pEq = dist[x] || 0, pGe = dist.slice(x).reduce((a, b) => a + b, 0), esp = m * K / N;
+    $('h-resultados').innerHTML = [[nf(pEq, 4), `P(X = ${x})`], [nf(pGe, 4), `P(X ≥ ${x})`], [nf(esp, 2), 'Esperado m·K/N']].map(([v, l]) => `<div><span class="big-res">${v}</span><p class="hint">${l}</p></div>`).join('');
+    $('h-formula').innerHTML = `P(X = ${x}) = C(${nf(K)}, ${x})·C(${nf(N - K)}, ${m - x}) / C(${nf(N)}, ${m}) = <span class="res">${nf(pEq, 6)}</span> &nbsp;·&nbsp; N = ${nf(N)}, K = ${nf(K)}, m = ${m}`;
+    Plotly.react('p-hiper', [{ type: 'bar', x: dist.map((_, i) => i), y: dist, marker: { color: dist.map((_, i) => (i >= x ? C.coral : '#c9d1e3')) },
+      hovertemplate: 'P(X = %{x}) = %{y:.4f}<extra></extra>' }],
+      L2({ xaxis: { gridcolor: 'rgba(0,0,0,0)', title: { text: `Registros con «${ind}» entre los ${m} seleccionados`, font: { size: 12 } }, dtick: m > 30 ? 5 : 1 }, yaxis: { gridcolor: C.rule }, bargap: 0.2 }), cfg);
+  }
+
+  // ---------- VALIDACIÓN ----------
+  function renderValidacion() {
+    const filas = [...D.descriptiva.validacion, ...D.regresion.validacion, ...D.probabilidad.validacion];
+    const fmtv = v => Math.abs(v) >= 1000 ? nf(v, 2) : nf(v, 6);
+    $('t-validacion').innerHTML = '<tr><th>Indicador</th><th class="num">Manual / teórico</th><th class="num">Computacional</th><th class="num">Diferencia</th><th class="num">Tolerancia</th><th>Resultado</th><th>Observación</th></tr>' +
+      filas.map(v => `<tr><td><b style="font-weight:600">${v.indicador}</b></td><td class="num">${fmtv(v.manual)}</td><td class="num">${fmtv(v.computacional)}</td><td class="num">${v.diferencia === 0 ? '0' : v.diferencia.toExponential(1)}</td><td class="num">${v.tolerancia === 0 ? '0' : v.tolerancia.toExponential(0)}</td><td><span class="chip ${v.cumple ? 'ok' : 'no'}">${v.cumple ? '✓ Cumple' : '✗ Revisar'}</span></td><td class="note">${v.observacion}</td></tr>`).join('');
+  }
+
+  // ---------- CIENCIA DE DATOS ----------
+  const SEGC = { 'Digitales financieros': C.navy, 'Huella básica: redes y familia': C.coral, 'Hogar conectado (IoT)': C.aqua, 'Sin huella digital': C.gray };
+  const SEGS = { 'Digitales financieros': 'square', 'Huella básica: redes y familia': 'circle', 'Hogar conectado (IoT)': 'diamond' };
+  function renderCiencia() {
+    const c = D.ciencia, m = c.modelo;
+    $('kpis-ciencia').innerHTML = [[pc(c.con_huella), 'Registros con huella', 'alguna bandera de interés'], [`${c.meses_medidos.length} de 9`, 'Meses con huella medida', 'enero a junio'],
+      [nf(c.n_interes), 'Banderas de interés útiles', 'de 88 tras limpiar'], [nf(c.K), 'Segmentos con huella', '+ 1 sin huella'],
+      [nf(m.auc, 3), 'AUC del árbol', 'validación cruzada 5 pliegues'], [pc(c.prop_medidos.BAN_BANCA), 'Banca en meses medidos', `vs ${pc(D.descriptiva.proporciones.BAN_BANCA.p)} en toda la muestra`]]
+      .map(([v, l, n]) => `<div class="kpi"><span class="v">${v}</span><span class="l">${l}</span><span class="n">${n}</span></div>`).join('');
+    $('t-calidad').innerHTML = '<tr><th>Problema</th><th class="num">Afectado</th><th></th><th>Decisión</th></tr>' + c.calidad.slice().sort((a, b) => b.proporcion - a.proporcion)
+      .map(q => `<tr><td>${q.problema}</td><td class="num"><b style="font-weight:600">${pc(q.proporcion)}</b></td><td style="width:18%"><div class="bar"><div style="width:${100 * q.proporcion}%;background:${q.proporcion > 0.5 ? C.coral : C.navy}"></div></div></td><td class="note">${q.decision}</td></tr>`).join('');
+    // huella por mes
+    const pm = c.por_mes;
+    Plotly.react('p-huella-mes', [
+      { type: 'bar', name: 'Con alguna bandera', x: pm.map(r => r.mes.slice(0, 3)), y: pm.map(r => r.con_huella), marker: { color: pm.map(r => (c.meses_medidos.includes(r.FECHA_ACTUALIZACION) ? C.navy : C.coral)) },
+        text: pm.map(r => pc(r.con_huella, 0)), textposition: 'outside', textfont: { color: C.ink }, hovertemplate: '%{x}: %{y:.1%} con huella<extra></extra>' },
+      { type: 'scatter', mode: 'lines+markers', name: 'Banca digital', x: pm.map(r => r.mes.slice(0, 3)), y: pm.map(r => r.banca), line: { color: C.aqua, width: 2 }, marker: { size: 8 }, hovertemplate: '%{x}: %{y:.1%} banca<extra></extra>' }],
+      L2({ showlegend: true, legend: { orientation: 'h', y: 1.12, font: { color: C.ink } }, yaxis: { gridcolor: C.rule, tickformat: '.0%', range: [0, 0.3] }, bargap: 0.3,
+        annotations: pm.filter(r => !c.meses_medidos.includes(r.FECHA_ACTUALIZACION)).map(r => ({ x: r.mes.slice(0, 3), y: 0.05, text: 'no<br>medido', showarrow: false, font: { color: C.coral, size: 12 } })) }), cfg);
+    const pt = c.por_tramo;
+    Plotly.react('p-huella-tramo', [
+      { type: 'bar', name: 'Con alguna bandera', x: pt.map(r => r.tramo.replace(' meses', '').replace('Más de ', '>')), y: pt.map(r => r.con_huella), marker: { color: C.navy }, text: pt.map(r => pc(r.con_huella, 0)), textposition: 'outside', textfont: { color: C.ink }, hovertemplate: '%{x}: %{y:.1%}<extra></extra>' },
+      { type: 'bar', name: 'Banca digital', x: pt.map(r => r.tramo.replace(' meses', '').replace('Más de ', '>')), y: pt.map(r => r.banca), marker: { color: C.aqua }, hovertemplate: '%{x}: %{y:.1%} banca<extra></extra>' }],
+      L2({ showlegend: true, barmode: 'group', legend: { orientation: 'h', y: 1.12, font: { color: C.ink } }, xaxis: { title: { text: 'Antigüedad (meses)', font: { size: 12 } } }, yaxis: { gridcolor: C.rule, tickformat: '.0%', range: [0, 1] }, bargap: 0.25 }), cfg);
+    $('f-huella').textContent = `Consecuencia para la estadística: la proporción de banca digital de toda la muestra (${pc(D.descriptiva.proporciones.BAN_BANCA.p)}) está subestimada; en los meses medidos es ${pc(c.prop_medidos.BAN_BANCA)}. Además, solo el ${pc(pt[0].con_huella, 0)} de las líneas de 0–3 meses tiene huella, frente al ${pc(pt[2].con_huella, 0)} de las de 13–36 meses. Entre contactables tiene huella el ${pc(c.huella_por_restriccion.contactables, 0)}; entre restringidos, el ${pc(c.huella_por_restriccion.restringidos, 0)}.`;
+    // segmentos 3D
+    const P = c.puntos, segs = [...new Set(P.segmento)];
+    Plotly.react('p-segmentos', segs.map(s => { const idx = P.segmento.map((v, i) => (v === s ? i : -1)).filter(i => i >= 0);
+      return { type: 'scatter3d', mode: 'markers', name: s, x: idx.map(i => P.pc1[i]), y: idx.map(i => P.pc2[i]), z: idx.map(i => P.pc3[i]),
+        marker: { size: 4.5, color: SEGC[s], symbol: SEGS[s] || 'circle', opacity: 0.85, line: { width: 0 } },
+        text: idx.map(i => `${s}<br>cargo $${nf(P.VAL_CFM[i])} · ${nf(P.ANTIGUEDAD_MESES[i])} meses`), hovertemplate: '%{text}<extra></extra>' }; }),
+      { paper_bgcolor: 'rgba(0,0,0,0)', separators: ',.', font, hoverlabel, margin: { l: 0, r: 0, t: 0, b: 0 }, legend: { orientation: 'h', y: 1.04, font: { color: C.ink, size: 13 } },
+        scene: { xaxis: ax3('CP1'), yaxis: ax3('CP2'), zaxis: ax3('CP3'), camera: { eye: { x: 1.6, y: 1.3, z: 0.8 } }, aspectmode: 'cube' } }, cfg);
+    const afin = Object.fromEntries(c.afinidad.map(a => [a.segmento, a]));
+    $('segs').innerHTML = c.perfiles.map(p => `<div class="seg" style="--c:${SEGC[p.segmento]}"><div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline"><b>${p.segmento}</b><span style="font-weight:600">${pc(p.pct)}</span></div>
+      <p class="m">${nf(p.registros)} registros · cargo medio $${nf(p.cfm_media)} · antigüedad mediana ${nf(p.antig_mediana)} meses · banca ${pc(p.banca, 0)} · restricción ${pc(p.restriccion, 0)}</p>
+      ${afin[p.segmento] ? `<div class="tags">${afin[p.segmento].afinidades.map(([n, v]) => `<span class="tag">${n.replace(/_/g, ' ')} <b style="color:var(--ink-2)">${v}</b></span>`).join('')}</div>` : ''}</div>`).join('');
+    $('t-segmentos').innerHTML = '<tr><th>Segmento</th><th class="num">Registros</th><th class="num">x̄ cargo</th><th class="num">Mediana</th><th class="num">s</th><th class="num">CV</th><th class="num">Antigüedad mediana</th><th class="num">Banca</th><th class="num">Billetera</th><th class="num">Pagos</th></tr>' +
+      c.perfiles.map(p => `<tr class="${p.cfm_cv === Math.max(...c.perfiles.map(q => q.cfm_cv)) ? 'destacada' : ''}"><td>${p.segmento}</td><td class="num">${nf(p.registros)}</td><td class="num">${nf(p.cfm_media)}</td><td class="num">${nf(p.cfm_mediana)}</td><td class="num">${nf(p.cfm_sd)}</td><td class="num">${nf(p.cfm_cv, 1)} %</td><td class="num">${nf(p.antig_mediana)}</td><td class="num">${pc(p.banca, 0)}</td><td class="num">${pc(p.billetera, 0)}</td><td class="num">${pc(p.pagos, 0)}</td></tr>`).join('');
+    // reglas
+    $('kpis-modelo').innerHTML = [[nf(m.n), 'Registros', 'meses medidos'], [pc(m.tasa), 'Con afinidad financiera', `${nf(m.positivos)} registros`], [nf(m.auc, 3), 'AUC-ROC árbol', `pliegues ${nf(Math.min(...m.auc_pliegues), 3)}–${nf(Math.max(...m.auc_pliegues), 3)}`], [nf(m.auc_gb, 3), 'AUC gradient boosting', 'apenas mejora: la huella domina']]
+      .map(([v, l, n]) => `<div class="kpi"><span class="v">${v}</span><span class="l">${l}</span><span class="n">${n}</span></div>`).join('');
+    $('t-reglas').innerHTML = '<tr><th>Si…</th><th class="num">Registros</th><th class="num">P(afinidad | regla)</th><th class="num">Lift</th><th></th></tr>' +
+      m.reglas.map(r => `<tr><td>${r.regla}</td><td class="num">${nf(r.registros)}</td><td class="num"><b style="font-weight:600">${pc(r.p_afinidad)}</b></td><td class="num">${nf(r.lift, 1)}×</td><td style="width:16%"><div class="bar"><div style="width:${100 * r.p_afinidad}%;background:${r.p_afinidad > 0.5 ? C.coral : C.navy}"></div></div></td></tr>`).join('');
+    $('n-reglas').textContent = `Las banderas se encienden en bloque: la variable «familia» concentra el ${pc(m.importancia[0].importancia, 0)} de la importancia del árbol porque casi siempre acompaña a las demás. Son asociaciones entre banderas, no causas.`;
+    const hip = c.hipergeometrica, claves = Object.keys(hip);
+    Plotly.react('p-hip-ds', claves.map((k, i) => ({ type: 'bar', name: `${k} (N=${nf(hip[k].N)}, K=${nf(hip[k].K)})`, x: hip[k].dist.map((_, x) => x), y: hip[k].dist,
+      marker: { color: i ? C.coral : C.navy }, hovertemplate: 'P(X = %{x}) = %{y:.4f}<extra></extra>' })),
+      L2({ showlegend: true, barmode: 'overlay', legend: { orientation: 'h', y: 1.18, font: { color: C.ink } }, xaxis: { gridcolor: 'rgba(0,0,0,0)', dtick: 2, title: { text: 'Registros con afinidad entre 20 seleccionados', font: { size: 12 } } }, yaxis: { gridcolor: C.rule }, bargap: 0.15 }), cfg);
+    const pr = m.prueba, mx = pr.matriz;
+    $('kpis-prueba').innerHTML = [[pc(pr.exactitud), 'Exactitud', `ingenuo: ${pc(pr.exactitud_ingenuo)}`], [nf(pr.f1, 2), 'F1', 'equilibrio precisión–sensibilidad'], [nf(pr.auc_prueba, 3), 'AUC en prueba', `${nf(pr.n_prueba)} registros`],
+      [pc(pr.precision), 'Precisión', 'de los señalados, cuántos sí'], [pc(pr.sensibilidad), 'Sensibilidad', 'de los que sí, cuántos encontró'], [nf(pr.n_entrenamiento), 'Entrenamiento', 'registros (70 %)']]
+      .map(([v, l, n]) => `<div class="kpi"><span class="v" style="color:var(--navy-2)">${v}</span><span class="l" style="color:var(--navy-2)">${l}</span><span class="n" style="color:var(--ink-2)">${n}</span></div>`).join('');
+    $('t-confusion').innerHTML = `<tr><th>Matriz de confusión</th><th class="num">Predice «no»</th><th class="num">Predice «sí»</th></tr>
+      <tr><td>Realmente no</td><td class="num">${nf(mx.vn)}</td><td class="num">${nf(mx.fp)}</td></tr><tr><td>Realmente sí</td><td class="num">${nf(mx.fn)}</td><td class="num"><b>${nf(mx.vp)}</b></td></tr>`;
+    $('f-prueba').textContent = `En la prueba el árbol acierta el ${pc(pr.exactitud)} de los casos con F1 = ${nf(pr.f1, 2)}: encuentra ${nf(mx.vp)} de los ${nf(mx.vp + mx.fn)} clientes con afinidad y se equivoca con ${nf(mx.fp)} que no la tienen. Un modelo que siempre dijera «no» tendría ${pc(pr.exactitud_ingenuo)} de exactitud, por eso se reporta también el F1. Son estimaciones, no certezas: el modelo aprende asociaciones entre banderas que se activan juntas.`;
+    $('f-reglas').textContent = `Escogiendo 20 registros al azar, P(≥ 5 con afinidad) = ${nf(hip[claves[0]].P_al_menos_5, 3)} y se esperan ${nf(hip[claves[0]].esperado, 1)}. Dentro de la regla «${c.hip_regla}», P(≥ 5) = ${nf(hip[claves[1]].P_al_menos_5, 3)} y se esperan ${nf(hip[claves[1]].esperado, 1)}.`;
+    $('alineacion-cards').innerHTML = c.alineacion.map((a, i) => `<div class="card sube" style="--d:${(i % 2) * 100}"><h3>${a.pregunta}</h3><p class="finding" style="margin-top:8px;padding-top:8px;border-top-width:2px">${a.hallazgo}</p></div>`).join('');
+  }
+})();
+</script>
+</body>
+</html>

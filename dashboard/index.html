@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Huella Digital: Estadística y Datos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+/* Mundo único claro y plano: bandas de color a sangre (cielo, marino, rosa, coral), titulares en serif,
+   etiquetas espaciadas con rombo y rayita; los cálculos se muestran paso a paso sobre tarjetas blancas. */
+:root {
+  color-scheme: light;
+  --sky: #a8d0e6; --navy: #303f80; --navy-2: #263366; --pink: #faabab; --coral: #f76c6c; --paper: #ffffff;
+  --ink: #263366; --ink-2: #55608f; --rule: #e3e8f0; --scene: #f3f7fa; --tint: #f6f8fc;
+  --s1: #303f80; --s2: #f76c6c; --s3: #1baf7a; --s4: #a9afb8;
+  --critical: #c93c3c; --warn: #b7791f; --good: #1a8a5f;
+  --ease: cubic-bezier(0.77, 0, 0.175, 1); --pop: cubic-bezier(0.18, 0.89, 0.67, 1.16);
+  --display: "Playfair Display", Georgia, "Times New Roman", serif;
+  --body: "Outfit", "Segoe UI", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--navy-2); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.5; }
+h1, h2, h3, h4 { margin: 0; text-wrap: balance; }
+p { margin: 0; }
+.wrap { max-width: 1280px; margin: 0 auto; padding: 0 40px; position: relative; z-index: 1; }
+.band { position: relative; overflow: hidden; padding: 92px 0 84px; }
+.band.sky { background: var(--sky); } .band.navy { background: var(--navy); color: #fff; }
+.band.pink { background: var(--pink); } .band.coral { background: var(--coral); color: var(--navy-2); }
+.band.parte { padding: 110px 0 100px; }
+.watermark { position: absolute; top: 50%; right: -2vw; z-index: 0; font: 700 clamp(300px, 44vw, 680px)/0.8 var(--display);
+  color: rgba(255, 255, 255, 0.18); pointer-events: none; user-select: none; transform: translate3d(0, calc(-50% + var(--par, 0px)), 0); }
+.band.navy .watermark { color: rgba(255, 255, 255, 0.06); }
+.label { display: inline-flex; align-items: center; gap: 12px; font: 700 14px/1 var(--body); letter-spacing: 0.2em; text-transform: uppercase; padding-bottom: 14px; position: relative; margin-bottom: 22px; }
+.label .dia { width: 8px; height: 8px; background: currentColor; transform: rotate(45deg); flex: none; }
+.label::after { content: ""; position: absolute; left: 0; bottom: 0; width: 28px; height: 3px; background: currentColor; transform-origin: 0 0; }
+.band.sky .label { color: #b54545; } .band.pink .label { color: #8a3b3b; } .band.coral .label { color: var(--navy-2); } .band.navy .label { color: var(--pink); }
+.statement { font: 400 clamp(32px, 4.4vw, 58px)/1.08 var(--display); max-width: 18ch; }
+.statement.lg { font-size: clamp(44px, 6.2vw, 82px); max-width: 15ch; }
+.lead { font-weight: 300; font-size: 19px; max-width: 60ch; margin-top: 18px; }
+.band.navy .lead { color: #d9def0; }
+.head { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 24px 48px; align-items: end; margin-bottom: 36px; }
+.head .lead { margin-top: 0; }
+.parte-num { font: 400 italic clamp(80px, 12vw, 160px)/0.9 var(--display); color: rgba(255,255,255,0.85); }
+.band.navy .parte-num { color: var(--pink); }
+.card { background: var(--paper); color: var(--ink); border-radius: 4px; padding: 22px; min-width: 0;
+  transform: perspective(60em) translate3d(0, 0, 0); transition: transform 0.25s, box-shadow 0.25s; box-shadow: 0 1px 0 rgba(38, 51, 102, 0.08); }
+.card:hover { transform: perspective(60em) translate3d(0, 0, 5px); box-shadow: 0 14px 30px -18px rgba(38, 51, 102, 0.45); }
+.card h3 { font: 700 13px/1.25 var(--body); letter-spacing: 0.16em; text-transform: uppercase; margin-bottom: 6px; }
+.card h4 { font: 400 22px/1.2 var(--display); margin-bottom: 6px; }
+.hint { font-size: 14px; color: var(--ink-2); font-weight: 300; }
+.grid-2 { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 20px; }
+.grid-2e { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.stack-gap > * + * { margin-top: 20px; }
+.plot { width: 100%; height: 460px; } .plot.sm { height: 280px; } .plot.md { height: 360px; } .plot.lg { height: 540px; }
+.hero { padding: 120px 0 72px; min-height: 92vh; display: flex; align-items: center; }
+.brand { position: absolute; top: 32px; left: 40px; z-index: 3; font: 700 24px/1 var(--body); color: #fff; text-decoration: none; }
+.brand span { color: var(--navy-2); }
+.hero .cta { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 34px; }
+.pill { position: relative; overflow: hidden; display: inline-flex; align-items: center; font: 700 13px/1 var(--body); letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--navy-2); background: transparent; border: 3px solid var(--navy-2); border-radius: 999px; padding: 14px 24px; cursor: pointer; text-decoration: none; transition: color 0.1s 0.1s; }
+.pill .fill { position: absolute; inset: 0; background: var(--navy-2); transform: scaleY(0); transform-origin: 0 100%; transition: transform 0.3s var(--ease); }
+.pill span { position: relative; }
+.pill:hover .fill, .pill[aria-pressed="true"] .fill { transform: scaleY(1); transform-origin: 0 0; }
+.pill:hover, .pill[aria-pressed="true"] { color: #fff; }
+.band.navy .pill { color: #fff; border-color: #fff; } .band.navy .pill .fill { background: #fff; } .band.navy .pill:hover, .band.navy .pill[aria-pressed="true"] { color: var(--navy-2); }
+.pill:focus-visible, .round:focus-visible, select:focus-visible, input:focus-visible, .pager a:focus-visible { outline: 3px solid var(--coral); outline-offset: 3px; }
+.kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 28px 24px; margin-top: 52px; padding-top: 26px; border-top: 2px solid rgba(38, 51, 102, 0.18); }
+.kpi .v { display: block; font: 400 clamp(28px, 2.8vw, 40px)/1 var(--display); font-variant-numeric: lining-nums tabular-nums; color: var(--navy-2); }
+.kpi .l { display: block; font: 700 12px/1.3 var(--body); letter-spacing: 0.15em; text-transform: uppercase; margin-top: 10px; color: var(--navy-2); }
+.kpi .n { display: block; font-size: 14px; font-weight: 300; color: #3d4a7c; margin-top: 2px; }
+.band.navy .kpi .v, .band.navy .kpi .l { color: #fff; } .band.navy .kpi .n { color: #c9d0ea; } .band.navy .kpis { border-top-color: rgba(255,255,255,0.2); }
+/* fórmulas y pasos */
+.formula { font: italic 400 19px/1.5 var(--display); background: var(--tint); border-left: 3px solid var(--coral); padding: 10px 14px; margin: 10px 0; overflow-wrap: anywhere; }
+.formula sub, .formula sup { font-size: 0.65em; }
+.formula .res { font-style: normal; font-weight: 700; color: var(--navy-2); }
+.paso { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 14px; align-items: start; padding: 14px 0; border-bottom: 1px solid var(--rule); }
+.paso:last-child { border-bottom: 0; }
+.paso .num { font: 400 30px/1 var(--display); color: var(--coral); }
+.qa { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--rule); display: grid; gap: 8px; }
+.qa p { font-size: 15px; }
+.qa b { font: 700 11px/1 var(--body); letter-spacing: 0.16em; text-transform: uppercase; display: block; margin-bottom: 3px; color: var(--ink-2); }
+.qa .r { font: 400 18px/1.35 var(--display); color: var(--ink); }
+.qa .u { color: var(--ink-2); font-weight: 300; }
+.medida { display: flex; flex-direction: column; }
+.medida .val { font: 400 34px/1 var(--display); margin: 6px 0 2px; font-variant-numeric: lining-nums tabular-nums; }
+.medida .cmp { font-size: 13px; color: var(--ink-2); }
+.filtro { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-bottom: 20px; }
+.filtro h3 { margin: 0 8px 0 0; }
+.filtro .pill { padding: 9px 14px; font-size: 12px; border-width: 2px; }
+.filtro .pill.vacio { opacity: 0.4; cursor: not-allowed; }
+.en-filtro { display: inline-flex; align-items: center; gap: 8px; margin-top: 14px; font: 700 12px/1 var(--body); letter-spacing: 0.14em; text-transform: uppercase;
+  background: var(--navy-2); color: #fff; padding: 8px 12px; border-radius: 999px; text-decoration: none; }
+.chip { white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; font: 700 11px/1 var(--body); letter-spacing: 0.12em; text-transform: uppercase; padding: 5px 10px; border-radius: 999px; border: 1.5px solid currentColor; }
+.chip.ok { color: var(--good); } .chip.no { color: var(--critical); } .chip.warn { color: var(--warn); }
+.finding { font: 400 19px/1.35 var(--display); color: var(--ink); margin-top: 16px; padding-top: 14px; border-top: 3px solid var(--coral); }
+.band.navy .finding.on-band { color: #fff; }
+table { width: 100%; border-collapse: collapse; font-size: 15px; }
+th { text-align: left; font: 700 11px/1.3 var(--body); letter-spacing: 0.13em; text-transform: uppercase; color: var(--ink-2); padding: 9px 10px; border-bottom: 2px solid var(--ink); white-space: nowrap; }
+td { padding: 8px 10px; border-bottom: 1px solid var(--rule); vertical-align: middle; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+tr.destacada td { background: #fff1f1; font-weight: 600; }
+.table-wrap { overflow-x: auto; }
+.bar { height: 6px; background: var(--rule); min-width: 70px; }
+.bar > div { height: 100%; background: var(--navy); transform-origin: 0 0; }
+.control { display: flex; flex-wrap: wrap; gap: 12px 22px; align-items: center; margin: 6px 0 12px; }
+.control label { font: 700 12px/1 var(--body); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-2); }
+.control output { font: 400 26px/1 var(--display); min-width: 2ch; }
+input[type="range"] { accent-color: var(--coral); width: 180px; }
+.ctl { display: inline-flex; align-items: center; gap: 12px; }
+select { font: 400 15px var(--body); color: var(--ink); background: #fff; border: 2px solid var(--rule); border-radius: 999px; padding: 8px 14px; }
+.legend-row { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 14px; color: var(--ink-2); }
+.legend-row span::before { content: ""; display: inline-block; width: 9px; height: 9px; margin-right: 7px; background: var(--c); transform: rotate(45deg); }
+.big-res { font: 400 46px/1 var(--display); font-variant-numeric: lining-nums tabular-nums; }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; } .tag { font-size: 13px; border: 1.5px solid var(--rule); border-radius: 999px; padding: 1px 9px; }
+.seg { border-left: 4px solid var(--c); padding: 4px 0 10px 14px; border-bottom: 1px solid var(--rule); }
+.seg b { font: 400 21px/1.2 var(--display); }
+.seg .m { font-size: 14px; color: var(--ink-2); font-weight: 300; font-variant-numeric: tabular-nums; }
+.note { font-size: 13px; color: var(--ink-2); font-weight: 300; }
+.orden { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.orden span { font-size: 13px; background: var(--tint); border: 1px solid var(--rule); padding: 4px 10px; border-radius: 4px; }
+footer { background: var(--navy-2); color: #b9c1e0; font-size: 14px; font-weight: 300; padding: 36px 0 48px; }
+.error { background: #fff; color: var(--critical); border-left: 4px solid var(--critical); padding: 14px 18px; margin: 20px 0; display: none; }
+/* navegación */
+.pager { opacity: 0.18; transition: opacity 0.35s ease; position: fixed; right: 30px; top: 50%; transform: translateY(-50%); z-index: 20; display: flex; flex-direction: column; gap: 11px; align-items: flex-end;
+  padding: 12px 10px; border-radius: 4px; background: rgba(255, 255, 255, 0.92); box-shadow: 0 6px 20px -12px rgba(38, 51, 102, 0.5); }
+.pager a { position: relative; display: flex; align-items: center; text-decoration: none; color: var(--ink-2); font: 700 10.5px/1 var(--body); letter-spacing: 0.16em; text-transform: uppercase; }
+.pager a .t { position: absolute; right: 40px; top: 50%; margin-top: -11px; padding: 6px 10px; background: #fff; border-radius: 3px; box-shadow: 0 4px 14px -8px rgba(38,51,102,.5);
+  opacity: 0; transform: translateX(6px); transition: opacity 0.2s, transform 0.2s; white-space: nowrap; pointer-events: none; }
+.pager a:hover .t, .pager a.activo .t { opacity: 1; transform: none; }
+.pager.ver, .pager:hover, .pager:focus-within { opacity: 1; }
+.pager a .d { display: block; margin-left: 14px; width: 12px; height: 3px; background: currentColor; transition: width 0.3s; }
+.pager a.activo { color: var(--navy-2); } .pager a.activo .d, .pager a:hover .d { width: 26px; }
+.pager .sep { height: 1px; width: 26px; background: var(--rule); margin: 2px 0; }
+.rounds { position: fixed; right: 30px; bottom: 28px; z-index: 20; display: flex; flex-direction: column; gap: 12px; }
+.round { position: relative; overflow: hidden; width: 46px; height: 46px; border-radius: 50%; border: 3px solid var(--navy-2); background: rgba(255, 255, 255, 0.85);
+  color: var(--navy-2); font: 700 18px/1 var(--body); cursor: pointer; display: grid; place-items: center; transition: color 0.1s 0.1s; }
+.round .fill { position: absolute; inset: 0; background: var(--navy-2); transform: scaleY(0); transform-origin: 0 100%; transition: transform 0.3s var(--ease); }
+.round span { position: relative; } .round:hover .fill { transform: scaleY(1); transform-origin: 0 0; } .round:hover { color: #fff; }
+.loader { position: fixed; inset: 0; z-index: 100; background: var(--pink); display: grid; place-items: center; transform-origin: 50% 0; transition: transform 0.8s var(--ease); }
+.loader .mark { text-align: center; color: #fff; }
+.loader .mark b { display: block; font: 700 54px/1 var(--body); letter-spacing: -0.02em; }
+.loader .mark small { display: block; font: 400 13px/1 var(--body); letter-spacing: 0.3em; margin-top: 8px; }
+.loader .dots { display: flex; gap: 10px; justify-content: center; margin-top: 16px; }
+.loader .dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--navy); animation: salto 0.9s var(--pop) infinite alternate; }
+.loader .dots i:nth-child(2) { animation-delay: 0.3s; }
+@keyframes salto { to { transform: translateY(-9px); } }
+body.listo .loader { transform: scaleY(0); }
+.cortina { position: fixed; inset: 0; z-index: 90; pointer-events: none; }
+.cortina svg { position: absolute; top: 0; height: 100%; width: 150vw; left: -150vw; }
+.cortina .c2 { transition: transform 0.55s var(--ease) 0.06s; } .cortina .c1 { transition: transform 0.55s var(--ease); }
+.cortina.cubre .c1, .cortina.cubre .c2 { transform: translateX(150vw); }
+.cortina.sale .c1, .cortina.sale .c2 { transform: translateX(300vw); }
+.cortina.reset .c1, .cortina.reset .c2 { transition: none; }
+/* animaciones de entrada */
+.anim .w { display: inline-block; overflow: hidden; vertical-align: top; padding-bottom: 0.08em; margin-bottom: -0.08em; }
+.anim .w > span { display: inline-block; transform: translateY(105%); transition: transform 0.8s var(--ease); transition-delay: calc(var(--i) * 45ms + 120ms); }
+.anim .in .w > span { transform: none; }
+.anim .label::after { transform: scaleX(0); }
+.anim .in .label::after { animation: rayita 0.9s var(--ease) 0.1s forwards; }
+@keyframes rayita { 0% { transform: scaleX(0); transform-origin: 0 0; } 45% { transform: scaleX(1.6); transform-origin: 0 0; } 100% { transform: scaleX(1); transform-origin: 0 0; } }
+.anim .label .dia { transform: rotate(45deg) scale(0); transition: transform 0.4s var(--pop) 0.05s; }
+.anim .in .label .dia { transform: rotate(45deg) scale(1); }
+.anim .sube { opacity: 0; transform: translateY(30px); transition: opacity 0.7s ease, transform 0.9s var(--ease); transition-delay: calc(var(--d, 0) * 1ms + 250ms); }
+.anim .in .sube { opacity: 1; transform: none; }
+.anim .bar > div { transform: scaleX(0); transition: transform 1s var(--ease) 0.3s; }
+.anim .in .bar > div { transform: scaleX(1); }
+.label:hover::after { animation: barra 0.6s var(--ease); }
+@keyframes barra { 0% { transform: scaleX(1); transform-origin: 100% 0; } 50% { transform: scaleX(0); transform-origin: 100% 0; } 50.01% { transform: scaleX(0); transform-origin: 0 0; } 100% { transform: scaleX(1); transform-origin: 0 0; } }
+@media (max-width: 1100px) {
+  .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .grid-2, .grid-2e, .grid-3, .head { grid-template-columns: 1fr; } .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pager { display: none; }
+}
+@media (max-width: 560px) {
+  .wrap { padding: 0 18px; } .brand { left: 18px; } .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid-4 { grid-template-columns: 1fr; } .plot { height: 400px; } .band { padding: 70px 0 60px; } .rounds { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .loader, .cortina { display: none; } *, *::before, *::after { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="loader" aria-hidden="true"><div class="mark"><b>huella.</b><small>ESTADÍSTICA · DATOS</small><div class="dots"><i></i><i></i></div></div></div>
+<div class="cortina reset" aria-hidden="true">
+  <svg class="c1" viewBox="0 0 150 100" preserveAspectRatio="none"><path fill="#ffffff" d="M0 0 H120 C132 12 112 24 124 38 C136 52 114 64 126 78 C136 90 120 96 124 100 H0 Z"/></svg>
+  <svg class="c2" viewBox="0 0 150 100" preserveAspectRatio="none"><path fill="#faabab" d="M0 0 H112 C124 14 104 28 116 42 C128 56 106 70 118 84 C126 94 112 98 116 100 H0 Z"/></svg>
+</div>
+<a class="brand" href="#inicio">huella<span>.</span></a>
+<nav class="pager" aria-label="Secciones" id="pager">
+  <a href="#inicio"><span class="t">Inicio</span><span class="d"></span></a>
+  <span class="sep"></span>
+  <a href="#estadistica"><span class="t">Estadística</span><span class="d"></span></a>
+  <a href="#poblacion"><span class="t">Población y muestra</span><span class="d"></span></a>
+  <a href="#agrupados"><span class="t">Datos agrupados</span><span class="d"></span></a>
+  <a href="#medidas"><span class="t">Medidas</span><span class="d"></span></a>
+  <a href="#antiguedad"><span class="t">Antigüedad</span><span class="d"></span></a>
+  <a href="#regresion"><span class="t">Regresión</span><span class="d"></span></a>
+  <a href="#proporciones"><span class="t">Proporciones</span><span class="d"></span></a>
+  <a href="#conteo"><span class="t">Conteo</span><span class="d"></span></a>
+  <a href="#probabilidad"><span class="t">Probabilidad</span><span class="d"></span></a>
+  <a href="#validacion"><span class="t">Validación</span><span class="d"></span></a>
+  <span class="sep"></span>
+  <a href="#ciencia"><span class="t">Ciencia de datos</span><span class="d"></span></a>
+  <a href="#calidad"><span class="t">Calidad</span><span class="d"></span></a>
+  <a href="#huella"><span class="t">Huella por mes</span><span class="d"></span></a>
+  <a href="#segmentos"><span class="t">Segmentos</span><span class="d"></span></a>
+  <a href="#reglas"><span class="t">Reglas</span><span class="d"></span></a>
+  <a href="#alineacion"><span class="t">Alineación</span><span class="d"></span></a>
+</nav>
+<div class="rounds">
+  <button class="round" type="button" id="subir" aria-label="Sección anterior"><span class="fill"></span><span>↑</span></button>
+  <button class="round" type="button" id="bajar" aria-label="Sección siguiente"><span class="fill"></span><span>↓</span></button>
+</div>
+
+<main>
+<!-- ===================== INICIO ===================== -->
+<section class="band sky hero" id="inicio">
+  <span class="watermark" aria-hidden="true">H</span>
+  <div class="wrap" style="width:100%">
+    <div class="error" id="error">No se pudieron cargar los datos. Recarga la página.</div>
+    <p class="label"><i class="dia"></i>Estadística + ciencia de datos · Marketing</p>
+    <h1 class="statement lg split">Comportamiento digital y cargo fijo de líneas móviles</h1>
+    <p class="lead sube" style="--d:200">Análisis de registros reales anonimizados de una empresa de telefonía móvil en Colombia, actualizados entre enero y octubre de 2026. Cada resultado muestra cómo se calculó.</p>
+    <div class="cta sube" style="--d:350">
+      <a class="pill" href="#estadistica"><span class="fill"></span><span>Parte 1 · Estadística</span></a>
+      <a class="pill" href="#ciencia"><span class="fill"></span><span>Parte 2 · Ciencia de datos</span></a>
+    </div>
+    <div class="kpis sube" style="--d:500" id="kpis"></div>
+  </div>
+</section>
+
+<!-- ===================== PARTE 1 ===================== -->
+<section class="band navy parte" id="estadistica">
+  <span class="watermark" aria-hidden="true">E</span>
+  <div class="wrap">
+    <div class="head">
+      <div><span class="parte-num">01</span><p class="label" style="margin-top:18px"><i class="dia"></i>Parte 1</p><h2 class="statement split">Estadística</h2></div>
+      <p class="lead sube">Tratamiento estadístico común sobre una sola variable, el cargo fijo mensual (VAL_CFM): datos agrupados, tendencia central, posición y dispersión. Después, mínimos cuadrados y correlación con la antigüedad, y modelado probabilístico con las preferencias digitales.</p>
+    </div>
+  </div>
+</section>
+
+<section class="band sky" id="poblacion">
+  <span class="watermark" aria-hidden="true">P</span>
+  <div class="wrap">
+    <div class="head">
+      <div><p class="label"><i class="dia"></i>5.2 · Conceptos básicos</p><h2 class="statement split">De 9.000 registros a la población de estudio</h2></div>
+      <p class="lead sube">La población son los registros de personas naturales con edad válida. Lo que se calcula sobre los registros recibidos es un estadístico; el valor de toda la base de la empresa sería el parámetro.</p>
+    </div>
+    <div class="grid-2">
+      <div class="card sube"><h3>Embudo de elegibilidad</h3><p class="hint">Cada paso aplica un criterio de la sección 5.2.1</p><div class="plot md" id="p-embudo"></div></div>
+      <div class="card sube" style="--d:120"><h3>Estratos por mes</h3><p class="hint">Recibidos (1.000 por mes) y elegibles; la meta del plan era 10.000 por mes</p><div class="plot md" id="p-estratos"></div></div>
+    </div>
+    <div class="grid-4" style="margin-top:20px" id="conceptos"></div>
+    <div class="card sube" style="margin-top:20px">
+      <h3>Clasificación de las seis variables (Tabla 1)</h3>
+      <div class="table-wrap"><table id="t-variables"></table></div>
+      <p class="finding" id="f-poblacion"></p>
+    </div>
+  </div>
+</section>
+
+<section class="band pink" id="agrupados">
+  <span class="watermark" aria-hidden="true">A</span>
+  <div class="wrap">
+    <div class="head">
+      <div><p class="label"><i class="dia"></i>5.4 · Datos agrupados · VAL_CFM</p><h2 class="statement split">Intervalos, marcas y frecuencias del cargo fijo</h2></div>
+      <p class="lead sube">Se agrupa una sola variable: el cargo fijo mensual en pesos. Mueve el número de clases para ver cómo cambian la tabla y las medidas, o filtra por mes; Sturges sugiere el número de clases según el tamaño de la selección.</p>
+    </div>
+    <div class="card sube filtro" id="filtro-card"><h3>Mes de actualización</h3><div class="filtro" id="filtro-mes" style="margin:0"></div><p class="hint" id="filtro-nota" style="flex-basis:100%"></p></div>
+    <div class="grid-2">
+      <div class="card sube">
+        <h3>Cómo se construyen los intervalos</h3>
+        <div id="pasos-agrupados"></div>
+      </div>
+      <div class="card sube" style="--d:120">
+        <h3>Cambiar el número de clases</h3>
+        <div class="control"><label for="k-slider">k</label><input type="range" id="k-slider" min="5" max="25" step="1" value="13"><output id="k-out">13</output><button class="pill" type="button" id="k-reset" style="padding:9px 16px"><span class="fill"></span><span>Volver a Sturges</span></button></div>
+        <p class="hint" id="k-nota"></p>
+        <div class="plot sm" id="p-hist"></div>
+        <div class="plot sm" id="p-ojiva"></div>
+      </div>
+    </div>
+    <div class="card sube" style="margin-top:20px">
+      <h3>Tabla de frecuencias</h3>
+      <p class="hint">Intervalos [L<sub>i</sub>, U<sub>i</sub>); el último incluye el máximo. En rojo, la clase modal.</p>
+      <div class="table-wrap"><table id="t-frecuencias"></table></div>
+      <div class="qa" id="qa-agrupados"></div>
+    </div>
+  </div>
+</section>
+
+<section class="band sky" id="medidas">
+  <span class="watermark" aria-hidden="true">M</span>
+  <div class="wrap">
+    <div class="head">
+      <div><p class="label"><i class="dia"></i>5.5 a 5.7 · Medidas</p><h2 class="statement split">Centro, posición y dispersión del cargo fijo</h2></div>
+      <p class="lead sube">Cada tarjeta muestra la fórmula con los valores reemplazados, el resultado agrupado y el exacto sobre los datos individuales. Cambian si mueves k o el mes en la sección anterior.<br><a class="en-filtro" href="#agrupados" id="chip-medidas"></a></p>
+    </div>
+    <div class="card sube" style="margin-bottom:20px"><h3>Dónde cae cada medida</h3><p class="hint">Media, mediana, moda y cuartiles agrupados sobre la recta del cargo fijo (COP)</p><div class="plot sm" id="p-recta"></div></div>
+    <div class="grid-3" id="tarjetas-medidas"></div>
+    <div class="card sube" style="margin-top:20px">
+      <h3>Agrupado frente a exacto</h3>
+      <div class="table-wrap"><table id="t-comparacion"></table></div>
+      <p class="finding" id="f-medidas"></p>
+    </div>
+  </div>
+</section>
+
+<section class="band coral" id="antiguedad">
+  <span class="watermark" aria-hidden="true">T</span>
+  <div class="wrap">
+    <div class="head">
+      <div><p class="label"><i class="dia"></i>5.3.1 · ANTIGUEDAD_MESES</p><h2 class="statement split">Una base de líneas recién activadas</h2></div>
+      <p class="lead sube">La antigüedad es discreta (meses enteros): se describe con los valores individuales y se resume en tramos de permanencia, sin tratarla como continua.</p>
+    </div>
+    <div class="kpis" id="kpis-antig" style="margin:0 0 28px"></div>
+    <div class="grid-2">
+      <div class="card sube"><h3>Registros por tramo de permanencia</h3><div class="plot md" id="p-antig"></div></div>
+      <div class="card sube" style="--d:120"><h3>Pregunta de análisis</h3><div class="qa" id="qa-antig" style="border:0;margin:0;padding:0"></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="band navy" id="regresion">
+  <span class="watermark" aria-hidden="true">R</span>
+  <div class="wrap">
+    <div class="head">
+      <div><p class="label"><i class="dia"></i>5.8 y 5.9 · Mínimos cuadrados y Pearson</p><h2 class="statement split">Más antigüedad, cargo un poco menor</h2></div>
+      <p class="lead sube">X = antigüedad (meses), Y = cargo fijo (COP), con los pares individuales válidos. El tamaño de cada punto indica cuántos registros comparten esos valores.</p>
+    </div>
+    <div class="grid-2">
+      <div class="card sube"><h3>Diagrama de dispersión y recta ajustada</h3><div class="plot lg" id="p-dispersion"></div></div>
+      <div class="card sube" style="--d:120"><h3>Cálculo paso a paso</h3><div id="pasos-regresion"></div></div>
+    </div>
+    <div class="grid-2" style="margin-top:20px">
+      <div class="card sube"><h3>Antigüedad y cargo fijo a la vez</h3><p class="hint">Registros por tramo de antigüedad y rango de cargo fijo (altura en escala logarítmica)</p><div class="plot" id="p-conjunta" style="height:820px"></div></div>
+      <div class="card sube" style="--d:120">
+        <h3>Sensibilidad del ajuste</h3>
+        <div class="table-wrap"><table id="t-sensibilidad"></table></div>
+        <h3 style="margin-top:16px">Residuos</h3><div class="plot sm" id="p-residuos"></div>
+        <div class="qa" id="qa-regresion"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band pink" id="proporciones">
+  <span class="watermark" aria-hidden="true">%</span>
+  <div class="wrap">
+    <div class="head">
+      <div><p class="label"><i class="dia"></i>5.3.3 a 5.3.6 · Variables nominales</p><h2 class="statement split">Pocas preferencias digitales y mucha restricción</h2></div>
+      <p class="lead sube">Proporción observada p̂ = f / n de cada indicador, con n = registros con información válida.<br><a class="en-filtro" href="#agrupados" id="chip-proporciones"></a></p>
+    </div>
+    <div class="grid-2">
+      <div class="card sube"><h3>Proporción con el indicador activo</h3><div class="plot md" id="p-proporciones"></div></div>
+      <div class="card sube" style="--d:120"><h3>La restricción cambia todo</h3><p class="hint">Banca digital según la restricción de contacto</p><div class="plot md" id="p-restriccion"></div></div>
+    </div>
+    <div class="grid-2e" style="margin-top:20px" id="qa-proporciones"></div>
+  </div>
+</section>
+
+<section class="band sky" id="conteo">
+  <span class="watermark" aria-hidden="true">C</span>
+  <div class="wrap">
+    <div class="head">
+      <div><p class="label"><i class="dia"></i>5.10.1 a 5.10.3 · Técnicas de conteo</p><h2 class="statement split">Perfiles, órdenes y grupos posibles</h2></div>
+      <p class="lead sube">Principio multiplicativo, permutaciones y combinaciones con universos explícitos: las tres banderas digitales y cinco campañas candidatas.</p>
+    </div>
+    <div class="grid-2">
+      <div class="card sube"><h3>Principio multiplicativo · el cubo de perfiles</h3><p class="hint">Cada vértice es un perfil Banca × Billetera × Pagos; el tamaño indica cuántos registros lo tienen</p><div class="plot" id="p-cubo" style="height:900px"></div></div>
+      <div class="card sube" style="--d:120" id="conteo-pasos"></div>
+    </div>
+  </div>
+</section>
+
+<section class="band coral" id="probabilidad">
+  <span class="watermark" aria-hidden="true">P</span>
+  <div class="wrap">
+    <div class="head">
+      <div><p class="label"><i class="dia"></i>5.10.4 y 5.10.5 · Probabilidad</p><h2 class="statement split">Qué tan probable es acertar en una selección</h2></div>
+      <p class="lead sube">Probabilidad clásica al escoger un registro al azar, y modelo hipergeométrico para selecciones sin reemplazo. Usa la calculadora para armar tu propio escenario.</p>
+    </div>
+    <div class="grid-2">
+      <div class="card sube">
+        <h3>Calculadora hipergeométrica</h3>
+        <div class="control">
+          <label for="h-universo">Universo</label><select id="h-universo"></select>
+          <label for="h-indicador">Indicador</label><select id="h-indicador"></select>
+        </div>
+        <div class="control">
+          <span class="ctl"><label for="h-m">Tamaño m</label><input type="range" id="h-m" min="1" max="60" value="20"><output id="h-m-out">20</output></span>
+          <span class="ctl"><label for="h-x">Al menos x</label><input type="range" id="h-x" min="0" max="20" value="5"><output id="h-x-out">5</output></span>
+        </div>
+        <div class="grid-3" id="h-resultados" style="gap:12px;margin:10px 0"></div>
+        <div class="formula" id="h-formula"></div>
+        <div class="plot md" id="p-hiper"></div>
+      </div>
+      <div class="card sube" style="--d:120">
+        <h3>Probabilidades al escoger un registro al azar</h3>
+        <div class="table-wrap"><table id="t-probs"></table></div>
+        <div class="qa" id="qa-probabilidad"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band navy" id="validacion">
+  <span class="watermark" aria-hidden="true">V</span>
+  <div class="wrap">
+    <div class="head">
+      <div><p class="label"><i class="dia"></i>6.4 · Resultados y pruebas</p><h2 class="statement split">Cálculo manual frente a cálculo computacional</h2></div>
+      <p class="lead sube">Cada indicador se calculó con la fórmula del documento (sumas y lazos explícitos) y con la función de la biblioteca. La diferencia se compara con una tolerancia justificada por el redondeo.</p>
+    </div>
+    <div class="card sube table-wrap"><table id="t-validacion"></table></div>
+  </div>
+</section>
+
+<!-- ===================== PARTE 2 ===================== -->
+<section class="band coral parte" id="ciencia">
+  <span class="watermark" aria-hidden="true">D</span>
+  <div class="wrap">
+    <div class="head">
+      <div><span class="parte-num">02</span><p class="label" style="margin-top:18px"><i class="dia"></i>Parte 2</p><h2 class="statement split">Ciencia de datos</h2></div>
+      <p class="lead sube">Calidad de datos, segmentación y reglas de afinidad financiera, cada hallazgo conectado con una pregunta de la parte estadística.</p>
+    </div>
+    <div class="kpis" id="kpis-ciencia" style="margin-top:0"></div>
+  </div>
+</section>
+
+<section class="band sky" id="calidad">
+  <span class="watermark" aria-hidden="true">Q</span>
+  <div class="wrap">
+    <div class="head">
+      <div><p class="label"><i class="dia"></i>Calidad de datos</p><h2 class="statement split">Lo que hubo que decidir antes de analizar</h2></div>
+      <p class="lead sube">Problemas encontrados en los 9.000 registros recibidos y la decisión tomada en cada caso.</p>
+    </div>
+    <div class="card sube table-wrap"><table id="t-calidad"></table></div>
+  </div>
+</section>
+
+<section class="band pink" id="huella">
+  <span class="watermark" aria-hidden="true">H</span>
+  <div class="wrap">
+    <div class="head">
+      <div><p class="label"><i class="dia"></i>Hallazgo principal</p><h2 class="statement split">La huella digital no se midió todos los meses</h2></div>
+      <p class="lead sube">En julio, agosto y octubre ningún registro tiene banderas de interés, ni siquiera las líneas antiguas. Eso no significa que esos clientes no tengan intereses: las banderas no se calcularon.</p>
+    </div>
+    <div class="grid-2">
+      <div class="card sube"><h3>Registros con alguna bandera de interés, por mes</h3><div class="plot md" id="p-huella-mes"></div></div>
+      <div class="card sube" style="--d:120"><h3>Por tramo de antigüedad</h3><p class="hint">Solo meses en que la huella se midió</p><div class="plot md" id="p-huella-tramo"></div></div>
+    </div>
+    <p class="finding sube" id="f-huella" style="background:#fff;padding:18px 22px;border-radius:4px;border-top:0;border-left:3px solid var(--coral)"></p>
+  </div>
+</section>
+
+<section class="band navy" id="segmentos">
+  <span class="watermark" aria-hidden="true">S</span>
+  <div class="wrap">
+    <div class="head">
+      <div><p class="label"><i class="dia"></i>Segmentación en dos etapas</p><h2 class="statement split">Nueve de cada diez registros no tienen huella</h2></div>
+      <p class="lead sube">Primero se separan los registros con y sin huella digital; luego K-means agrupa a quienes sí la tienen según sus familias de intereses. Cada segmento se describe con las variables del documento.</p>
+    </div>
+    <div class="grid-2">
+      <div class="card sube"><h3>Registros con huella por segmento</h3><p class="hint">Componentes principales de los índices de interés; arrastra para girar</p><div class="plot lg" id="p-segmentos"></div></div>
+      <div class="card sube" style="--d:120"><h3>Perfil de cada segmento</h3><p class="hint">Etiquetas: intereses más marcados, con un índice donde 100 = promedio de los registros con huella</p><div id="segs"></div></div>
+    </div>
+    <div class="card sube" style="margin-top:20px">
+      <h3>Cargo fijo por segmento: ¿quién varía más? (5.7.3)</h3>
+      <div class="table-wrap"><table id="t-segmentos"></table></div>
+    </div>
+  </div>
+</section>
+
+<section class="band coral" id="reglas">
+  <span class="watermark" aria-hidden="true">R</span>
+  <div class="wrap">
+    <div class="head">
+      <div><p class="label"><i class="dia"></i>Modelo de afinidad financiera</p><h2 class="statement split">Reglas que son probabilidades condicionales</h2></div>
+      <p class="lead sube">Árbol de decisión de 3 niveles que estima si un registro tiene banca, billetera o pagos en línea, entrenado solo con los meses en que la huella se midió. Cada hoja es una regla «si… entonces P(afinidad) = …».</p>
+    </div>
+    <div class="kpis" id="kpis-modelo" style="margin:0 0 28px"></div>
+    <div class="grid-2">
+      <div class="card sube"><h3>Reglas del árbol</h3><div class="table-wrap"><table id="t-reglas"></table></div><p class="note" style="margin-top:10px" id="n-reglas"></p></div>
+      <div class="card sube" style="--d:120"><h3>Selección de 20 registros: al azar frente a la mejor regla</h3><p class="hint">Distribución hipergeométrica del número de registros con afinidad</p><div class="plot md" id="p-hip-ds"></div><p class="finding" id="f-reglas"></p></div>
+    </div>
+    <div class="card sube" style="margin-top:20px">
+      <h3>Prueba con datos que el modelo no vio (70 % entrenamiento, 30 % prueba)</h3>
+      <p class="hint">Variable objetivo: tener banca, billetera o pagos en línea. Se entrena con el 70 % de los registros de los meses medidos y se mide en el 30 % restante.</p>
+      <div class="grid-2" style="margin-top:12px"><div class="kpis" id="kpis-prueba" style="margin:0;padding:0;border:0;grid-template-columns:repeat(3,minmax(0,1fr))"></div>
+      <div class="table-wrap"><table id="t-confusion"></table></div></div>
+      <p class="finding" id="f-prueba"></p>
+    </div>
+  </div>
+</section>
+
+<section class="band sky" id="alineacion">
+  <span class="watermark" aria-hidden="true">✓</span>
+  <div class="wrap">
+    <div class="head">
+      <div><p class="label"><i class="dia"></i>Estadística ↔ ciencia de datos</p><h2 class="statement split">Cómo cada hallazgo responde una pregunta</h2></div>
+      <p class="lead sube">La ciencia de datos no reemplaza los cálculos estadísticos: explica por qué salen así y qué hacer con ellos.</p>
+    </div>
+    <div class="grid-2e" id="alineacion-cards"></div>
+  </div>
+</section>
+</main>
+<footer><div class="wrap" id="pie">Datos reales anonimizados de una empresa de telefonía móvil. Solo se muestran resultados agregados.</div></footer>
+
+<script id="datos" type="application/json">{"meta":{"empresa":"una empresa de telefonía móvil en Colombia","periodo":"enero–octubre de 2026","unidad":"registro de línea móvil"},"preparacion":{"recibidos":9000,"columnas":123,"marca_en_planes":524,"sensibles_eliminadas":["SALUD","DROGUERIA","APPS_CITAS","VIDEOXXX"],"constantes":["BEBIDAS_ALCOHOLICAS","BLOQUEO_CONTENIDO","CELULARES","TELCOX_MUSICA","TELCOX1","TELCOX2","TELCOX3","TELCOX4","TELCOX5","TELCOXAPPCONT","DOMICILIOS","EDAD","EDUCACION_SUPERIOR","EMPLEADORES","EMPRENDEDORES","EMPRENDEDORES_EMP","FINANZAS_PERS","FINCA_RAIZ","GAMERS","GASTROBAR","GENERO","GEOLOCALIZACION","GRANDES_SUPERFICIES","HOBBIES","MARKETPLACES","NEGOCIOS","PADRES_BEBES","PLANTELCOX_MUSICA","PLANTELCOX_VIDEO","TEC_AUDIO","TEC_CAMARAS","TEC_CELULARES","TEC_COMPUTADORES","TEC_TV","TECNOLOGIA"],"n_banderas":88,"clientes_unicos":7747,"clientes_multilinea":263,"atributos_identicos":890,"edad_cero_cedula":1867,"edad_mayor_100":1,"nit":1879,"bitacora":[{"tema":"Clave técnica","detalle":"ID_LINEA tiene 9,000 valores únicos en 9,000 registros: no hay líneas repetidas","decision":"Se usa ID_LINEA como clave para detectar duplicados"},{"tema":"Filas con atributos idénticos","detalle":"890 registros repiten todos los atributos de otro, pero con ID_LINEA distinta y en el mismo mes","decision":"Se conservan: son líneas distintas con los mismos valores (no se eliminan observaciones válidas por compartir valores)"},{"tema":"Clientes con varias líneas","detalle":"7,747 clientes únicos; 263 tienen más de una línea","decision":"La unidad de análisis es el registro de línea, no el cliente"},{"tema":"Banderas constantes","detalle":"35 de 88 banderas tienen un solo valor","decision":"Se excluyen de la ciencia de datos; no afectan las 6 variables"},{"tema":"Estrato sin dato","detalle":"87.0% de los registros traen 'Se'","decision":"No se usa estrato"},{"tema":"Terminal sin dato","detalle":"84.0% sin tecnología del equipo","decision":"No se usan variables de terminal"},{"tema":"Región comercial","detalle":"100% vacía","decision":"Se usa el departamento"},{"tema":"Fechas","detalle":"FECHA_ACTUALIZACION viene como año-mes (sin día); no hay registros de septiembre","decision":"No se puede verificar el corte del 20 de octubre; se reporta la ausencia de septiembre"},{"tema":"Faltantes en ANTIGUEDAD_MESES","detalle":"6 registros","decision":"Se excluyen solo del cálculo de esa variable"},{"tema":"Faltantes en VAL_CFM","detalle":"2 registros","decision":"Se excluyen solo del cálculo de esa variable"},{"tema":"Faltantes en BAN_BANCA","detalle":"0 registros","decision":"Se excluyen solo del cálculo de esa variable"},{"tema":"Faltantes en BAN_BILLETERA","detalle":"0 registros","decision":"Se excluyen solo del cálculo de esa variable"},{"tema":"Faltantes en BAN_PAGOS_ONLINE","detalle":"0 registros","decision":"Se excluyen solo del cálculo de esa variable"},{"tema":"Faltantes en BAN_SUPRESION_I","detalle":"0 registros","decision":"Se excluyen solo del cálculo de esa variable"}],"embudo":[{"paso":"Registros recibidos","registros":9000},{"paso":"Actualizados entre enero y octubre de 2026","registros":9000},{"paso":"Personas naturales (sin NIT)","registros":7121},{"paso":"Con edad válida (18–100 años)","registros":5230}],"estratos":[{"mes":"2026-01","recibidos":1000,"elegibles":501,"nombre":"Enero","meta":10000,"prop_en_elegibles":0.0958},{"mes":"2026-02","recibidos":1000,"elegibles":376,"nombre":"Febrero","meta":10000,"prop_en_elegibles":0.0719},{"mes":"2026-03","recibidos":1000,"elegibles":455,"nombre":"Marzo","meta":10000,"prop_en_elegibles":0.087},{"mes":"2026-04","recibidos":1000,"elegibles":573,"nombre":"Abril","meta":10000,"prop_en_elegibles":0.1096},{"mes":"2026-05","recibidos":1000,"elegibles":726,"nombre":"Mayo","meta":10000,"prop_en_elegibles":0.1388},{"mes":"2026-06","recibidos":1000,"elegibles":531,"nombre":"Junio","meta":10000,"prop_en_elegibles":0.1015},{"mes":"2026-07","recibidos":1000,"elegibles":733,"nombre":"Julio","meta":10000,"prop_en_elegibles":0.1402},{"mes":"2026-08","recibidos":1000,"elegibles":947,"nombre":"Agosto","meta":10000,"prop_en_elegibles":0.1811},{"mes":"2026-09","recibidos":0,"elegibles":0,"nombre":"Septiembre","meta":10000,"prop_en_elegibles":0.0},{"mes":"2026-10","recibidos":1000,"elegibles":388,"nombre":"Octubre","meta":10000,"prop_en_elegibles":0.0742}],"postpago_elegibles":0.9848948374760994,"faltantes":{"ANTIGUEDAD_MESES":3,"VAL_CFM":0,"BAN_BANCA":0,"BAN_BILLETERA":0,"BAN_PAGOS_ONLINE":0,"BAN_SUPRESION_I":0}},"descriptiva":{"por_mes":{"2026-01":{"nombre":"Enero","cfm_frecuencias":[[0.0,17],[698.0,1],[9489.0,1],[13000.0,1],[20050.0,1],[26007.0,1],[29027.0,1],[30872.0,6],[33339.0,6],[34000.0,1],[34396.0,25],[35990.0,1],[36829.0,13],[36913.0,31],[38339.0,24],[41862.0,9],[42194.0,1],[42701.0,320],[44804.0,1],[44878.0,1],[46057.0,1],[46243.0,1],[47377.0,1],[47819.0,2],[50160.0,1],[51049.0,7],[51426.0,1],[52097.0,16],[52553.0,1],[53775.0,1],[57215.0,1],[58683.0,2],[60990.0,1],[62919.0,1],[69547.0,1],[97392.0,1]],"proporciones":{"BAN_BANCA":{"f":56,"n":501,"p":0.11177644710578842},"BAN_BILLETERA":{"f":17,"n":501,"p":0.033932135728542916},"BAN_PAGOS_ONLINE":{"f":33,"n":501,"p":0.0658682634730539},"BAN_SUPRESION_I":{"f":437,"n":501,"p":0.872255489021956},"BANCA_Y_PAGOS":{"f":29,"n":501,"p":0.05788423153692615},"CONTACTABLES":{"f":64,"n":501,"p":0.1277445109780439},"BANCA_EN_CONTACTABLES":{"f":27,"n":64,"p":0.421875},"BANCA_EN_RESTRINGIDOS":{"f":29,"n":437,"p":0.06636155606407322}}},"2026-02":{"nombre":"Febrero","cfm_frecuencias":[[0.0,4],[1094.0,1],[1745.0,1],[9000.0,1],[9672.0,1],[11386.0,1],[11501.0,1],[16000.0,1],[17192.0,1],[18000.0,1],[20214.0,1],[24139.0,1],[26007.0,1],[29027.0,1],[30872.0,1],[33339.0,2],[34396.0,17],[35990.0,1],[36000.0,1],[36028.0,5],[36829.0,27],[36913.0,31],[37668.0,2],[38339.0,23],[39430.0,1],[41862.0,6],[42425.0,1],[42701.0,210],[43779.0,1],[44878.0,1],[46057.0,2],[46243.0,1],[46708.0,1],[47819.0,1],[48784.0,1],[50252.0,1],[51049.0,4],[52097.0,8],[53775.0,1],[55369.0,1],[56795.0,1],[58683.0,2],[60990.0,1],[62919.0,1],[68918.0,1],[69757.0,1],[92099.0,1]],"proporciones":{"BAN_BANCA":{"f":58,"n":376,"p":0.15425531914893617},"BAN_BILLETERA":{"f":23,"n":376,"p":0.061170212765957445},"BAN_PAGOS_ONLINE":{"f":37,"n":376,"p":0.09840425531914894},"BAN_SUPRESION_I":{"f":332,"n":376,"p":0.8829787234042553},"BANCA_Y_PAGOS":{"f":32,"n":376,"p":0.0851063829787234},"CONTACTABLES":{"f":44,"n":376,"p":0.11702127659574468},"BANCA_EN_CONTACTABLES":{"f":24,"n":44,"p":0.5454545454545454},"BANCA_EN_RESTRINGIDOS":{"f":34,"n":332,"p":0.10240963855421686}}},"2026-03":{"nombre":"Marzo","cfm_frecuencias":[[0.0,4],[3501.0,1],[5000.0,2],[8524.0,1],[17192.0,1],[18000.0,1],[18859.0,1],[20221.0,20],[21232.0,1],[23150.0,1],[26259.0,1],[27685.0,77],[28062.0,1],[29161.0,1],[30369.0,2],[30872.0,1],[31418.0,7],[31879.0,33],[32047.0,1],[32634.0,3],[33347.0,2],[33641.0,3],[34396.0,20],[36577.0,13],[36829.0,28],[36913.0,25],[37668.0,5],[38339.0,8],[38340.0,1],[39430.0,1],[40185.0,23],[40340.0,1],[41305.0,1],[41862.0,4],[41946.0,1],[42194.0,1],[42701.0,120],[43289.0,7],[44878.0,2],[45386.0,12],[47819.0,1],[51678.0,1],[51930.0,2],[52097.0,10],[56795.0,1],[64021.0,1],[77852.0,1]],"proporciones":{"BAN_BANCA":{"f":70,"n":455,"p":0.15384615384615385},"BAN_BILLETERA":{"f":23,"n":455,"p":0.05054945054945055},"BAN_PAGOS_ONLINE":{"f":39,"n":455,"p":0.08571428571428572},"BAN_SUPRESION_I":{"f":374,"n":455,"p":0.8219780219780219},"BANCA_Y_PAGOS":{"f":36,"n":455,"p":0.07912087912087912},"CONTACTABLES":{"f":81,"n":455,"p":0.17802197802197803},"BANCA_EN_CONTACTABLES":{"f":37,"n":81,"p":0.4567901234567901},"BANCA_EN_RESTRINGIDOS":{"f":33,"n":374,"p":0.08823529411764706}}},"2026-04":{"nombre":"Abril","cfm_frecuencias":[[0.0,9],[17192.0,1],[20221.0,20],[24313.0,1],[27685.0,6],[28062.0,7],[29161.0,3],[29950.0,5],[30369.0,9],[31418.0,14],[31879.0,39],[32215.0,1],[32374.0,1],[32503.0,2],[32634.0,1],[33000.0,1],[33339.0,1],[33347.0,8],[33641.0,4],[34396.0,2],[34454.0,1],[36577.0,20],[36913.0,12],[37668.0,1],[39289.0,3],[39369.0,1],[40185.0,374],[41527.0,1],[41946.0,1],[45386.0,11],[46245.0,1],[50252.0,1],[51930.0,2],[52097.0,2],[57351.0,1],[67030.0,5],[69128.0,1]],"proporciones":{"BAN_BANCA":{"f":70,"n":573,"p":0.12216404886561955},"BAN_BILLETERA":{"f":23,"n":573,"p":0.04013961605584642},"BAN_PAGOS_ONLINE":{"f":36,"n":573,"p":0.06282722513089005},"BAN_SUPRESION_I":{"f":485,"n":573,"p":0.8464223385689355},"BANCA_Y_PAGOS":{"f":35,"n":573,"p":0.06108202443280977},"CONTACTABLES":{"f":88,"n":573,"p":0.15357766143106458},"BANCA_EN_CONTACTABLES":{"f":49,"n":88,"p":0.5568181818181818},"BANCA_EN_RESTRINGIDOS":{"f":21,"n":485,"p":0.04329896907216495}}},"2026-05":{"nombre":"Mayo","cfm_frecuencias":[[0.0,4],[1172.0,1],[5000.0,1],[11047.0,1],[12501.0,1],[17192.0,2],[20260.0,1],[23150.0,1],[26976.0,1],[29161.0,1],[29950.0,4],[31418.0,4],[32215.0,4],[32634.0,1],[33000.0,1],[33339.0,2],[33641.0,1],[35000.0,1],[36116.0,1],[36829.0,1],[36913.0,6],[36955.0,3],[37668.0,1],[39430.0,1],[40185.0,661],[43047.0,1],[45000.0,1],[45386.0,4],[47735.0,1],[47819.0,1],[50252.0,1],[51930.0,2],[52097.0,9]],"proporciones":{"BAN_BANCA":{"f":18,"n":726,"p":0.024793388429752067},"BAN_BILLETERA":{"f":7,"n":726,"p":0.009641873278236915},"BAN_PAGOS_ONLINE":{"f":15,"n":726,"p":0.02066115702479339},"BAN_SUPRESION_I":{"f":678,"n":726,"p":0.9338842975206612},"BANCA_Y_PAGOS":{"f":11,"n":726,"p":0.015151515151515152},"CONTACTABLES":{"f":48,"n":726,"p":0.06611570247933884},"BANCA_EN_CONTACTABLES":{"f":11,"n":48,"p":0.22916666666666666},"BANCA_EN_RESTRINGIDOS":{"f":7,"n":678,"p":0.01032448377581121}}},"2026-06":{"nombre":"Junio","cfm_frecuencias":[[0.0,3],[349.0,1],[7678.0,1],[10501.0,1],[16359.0,2],[17000.0,1],[17192.0,2],[23150.0,1],[23560.0,1],[27265.0,1],[29950.0,9],[31000.0,1],[31418.0,5],[32501.0,1],[32634.0,1],[32998.0,1],[33000.0,1],[33339.0,4],[33641.0,6],[35000.0,1],[36000.0,1],[36116.0,1],[36829.0,1],[36913.0,3],[37668.0,1],[38000.0,1],[39289.0,2],[39369.0,1],[39430.0,1],[40185.0,441],[45386.0,11],[46057.0,1],[47567.0,1],[47735.0,1],[51930.0,10],[52097.0,6],[52676.0,1],[67467.0,1],[69757.0,1],[77852.0,1]],"proporciones":{"BAN_BANCA":{"f":68,"n":531,"p":0.128060263653484},"BAN_BILLETERA":{"f":19,"n":531,"p":0.035781544256120526},"BAN_PAGOS_ONLINE":{"f":37,"n":531,"p":0.0696798493408663},"BAN_SUPRESION_I":{"f":460,"n":531,"p":0.8662900188323918},"BANCA_Y_PAGOS":{"f":32,"n":531,"p":0.060263653483992465},"CONTACTABLES":{"f":71,"n":531,"p":0.1337099811676083},"BANCA_EN_CONTACTABLES":{"f":45,"n":71,"p":0.6338028169014085},"BANCA_EN_RESTRINGIDOS":{"f":23,"n":460,"p":0.05}}},"2026-07":{"nombre":"Julio","cfm_frecuencias":[[0.0,4],[20221.0,1],[29950.0,1],[31418.0,3],[32634.0,8],[33339.0,1],[33641.0,1],[36000.0,1],[36829.0,2],[36913.0,11],[37668.0,1],[40185.0,675],[43862.0,2],[45386.0,10],[47735.0,3],[51930.0,2],[52097.0,3],[67030.0,2],[67467.0,2]],"proporciones":{"BAN_BANCA":{"f":0,"n":733,"p":0.0},"BAN_BILLETERA":{"f":0,"n":733,"p":0.0},"BAN_PAGOS_ONLINE":{"f":0,"n":733,"p":0.0},"BAN_SUPRESION_I":{"f":595,"n":733,"p":0.8117326057298773},"BANCA_Y_PAGOS":{"f":0,"n":733,"p":0.0},"CONTACTABLES":{"f":138,"n":733,"p":0.1882673942701228},"BANCA_EN_CONTACTABLES":{"f":0,"n":138,"p":0.0},"BANCA_EN_RESTRINGIDOS":{"f":0,"n":595,"p":0.0}}},"2026-08":{"nombre":"Agosto","cfm_frecuencias":[[32634.0,30],[40185.0,907],[41401.0,1],[43289.0,1],[45386.0,5],[52097.0,2],[52676.0,1]],"proporciones":{"BAN_BANCA":{"f":1,"n":947,"p":0.0010559662090813093},"BAN_BILLETERA":{"f":0,"n":947,"p":0.0},"BAN_PAGOS_ONLINE":{"f":1,"n":947,"p":0.0010559662090813093},"BAN_SUPRESION_I":{"f":848,"n":947,"p":0.8954593453009504},"BANCA_Y_PAGOS":{"f":0,"n":947,"p":0.0},"CONTACTABLES":{"f":99,"n":947,"p":0.10454065469904963},"BANCA_EN_CONTACTABLES":{"f":1,"n":99,"p":0.010101010101010102},"BANCA_EN_RESTRINGIDOS":{"f":0,"n":848,"p":0.0}}},"2026-10":{"nombre":"Octubre","cfm_frecuencias":[[20221.0,4],[27685.0,43],[30117.0,1],[32215.0,1],[32634.0,5],[36913.0,1],[39346.0,3],[40185.0,325],[74329.0,5]],"proporciones":{"BAN_BANCA":{"f":0,"n":388,"p":0.0},"BAN_BILLETERA":{"f":0,"n":388,"p":0.0},"BAN_PAGOS_ONLINE":{"f":0,"n":388,"p":0.0},"BAN_SUPRESION_I":{"f":374,"n":388,"p":0.9639175257731959},"BANCA_Y_PAGOS":{"f":0,"n":388,"p":0.0},"CONTACTABLES":{"f":14,"n":388,"p":0.03608247422680412},"BANCA_EN_CONTACTABLES":{"f":0,"n":14,"p":0.0},"BANCA_EN_RESTRINGIDOS":{"f":0,"n":374,"p":0.0}}}},"n":5230,"N_recibidos":9000,"clasificacion":[{"variable":"ANTIGUEDAD_MESES","tipo":"Cuantitativa discreta","nivel":"Razón","codificacion_verificada":"meses enteros (0 = línea nueva)","validos":5227,"distintos":190},{"variable":"VAL_CFM","tipo":"Cuantitativa monetaria","nivel":"Razón","codificacion_verificada":"pesos colombianos; 0 = sin cargo fijo","validos":5230,"distintos":135},{"variable":"BAN_BANCA","tipo":"Cualitativa dicotómica","nivel":"Nominal","codificacion_verificada":"True / False","validos":5230,"distintos":2},{"variable":"BAN_BILLETERA","tipo":"Cualitativa dicotómica","nivel":"Nominal","codificacion_verificada":"True / False","validos":5230,"distintos":2},{"variable":"BAN_PAGOS_ONLINE","tipo":"Cualitativa dicotómica","nivel":"Nominal","codificacion_verificada":"True / False","validos":5230,"distintos":2},{"variable":"BAN_SUPRESION_I","tipo":"Cualitativa dicotómica","nivel":"Nominal","codificacion_verificada":"True = restricción de mensajes activa","validos":5230,"distintos":2}],"agrupados":{"n":5230,"xmin":0.0,"xmax":97392.0,"R":97392.0,"k_sturges":13.352862610417086,"k":13,"A":7492,"tabla":[{"clase":1,"L":0.0,"U":7492.0,"marca":3746.0,"f":54,"h":0.010325047801147227,"F":54,"H":0.010325047801147227},{"clase":2,"L":7492.0,"U":14984.0,"marca":11238.0,"f":11,"h":0.002103250478011472,"F":65,"H":0.0124282982791587},{"clase":3,"L":14984.0,"U":22476.0,"marca":18730.0,"f":63,"h":0.012045889101338431,"F":128,"H":0.024474187380497132},{"clase":4,"L":22476.0,"U":29968.0,"marca":26222.0,"f":171,"h":0.032695984703632885,"F":299,"H":0.05717017208413002},{"clase":5,"L":29968.0,"U":37460.0,"marca":33714.0,"f":539,"h":0.10305927342256214,"F":838,"H":0.16022944550669216},{"clase":6,"L":37460.0,"U":44952.0,"marca":41206.0,"f":4183,"h":0.7998087954110898,"F":5021,"H":0.960038240917782},{"clase":7,"L":44952.0,"U":52444.0,"marca":48698.0,"f":166,"h":0.03173996175908222,"F":5187,"H":0.9917782026768642},{"clase":8,"L":52444.0,"U":59936.0,"marca":56190.0,"f":14,"h":0.0026768642447418736,"F":5201,"H":0.9944550669216061},{"clase":9,"L":59936.0,"U":67428.0,"marca":63682.0,"f":12,"h":0.002294455066921606,"F":5213,"H":0.9967495219885277},{"clase":10,"L":67428.0,"U":74920.0,"marca":71174.0,"f":13,"h":0.00248565965583174,"F":5226,"H":0.9992351816443594},{"clase":11,"L":74920.0,"U":82412.0,"marca":78666.0,"f":2,"h":0.0003824091778202677,"F":5228,"H":0.9996175908221797},{"clase":12,"L":82412.0,"U":89904.0,"marca":86158.0,"f":0,"h":0.0,"F":5228,"H":0.9996175908221797},{"clase":13,"L":89904.0,"U":97396.0,"marca":93650.0,"f":2,"h":0.0003824091778202677,"F":5230,"H":1.0}],"medidas":{"media":39661.75984703633,"mediana":40642.71192923739,"moda":41023.61414958883,"Q1":38300.90222328473,"Q2":40642.71192923739,"Q3":42984.52163519005,"varianza":40573848.15803555,"desviacion":6369.760447460763,"cv":16.060206284408572,"suma_fm":207431004.0,"suma_cuad":212160652018.36786,"moda_detalle":{"clase":6,"L":37460.0,"f":4183,"f_prev":539,"f_next":166,"d1":3644,"d2":4017,"A":7492},"cuantiles":{"Q1":{"p":0.25,"posicion":1307.5,"clase":6,"L":37460.0,"F_ant":838,"f":4183,"A":7492,"valor":38300.90222328473},"Q2":{"p":0.5,"posicion":2615.0,"clase":6,"L":37460.0,"F_ant":838,"f":4183,"A":7492,"valor":40642.71192923739},"Q3":{"p":0.75,"posicion":3922.5,"clase":6,"L":37460.0,"F_ant":838,"f":4183,"A":7492,"valor":42984.52163519005}}}},"exactas":{"media":39276.44952198853,"mediana":40185.0,"moda":40185.0,"Q1":40185.0,"Q2":40185.0,"Q3":40185.0,"varianza":41291877.728470795,"desviacion":6425.875639044907,"cv":16.360632687655347},"comparacion":[{"medida":"media","agrupada":39661.75984703633,"exacta":39276.44952198853,"diferencia":385.3103250478016,"diferencia_pct":0.9810212728930334},{"medida":"mediana","agrupada":40642.71192923739,"exacta":40185.0,"diferencia":457.71192923739,"diferencia_pct":1.1390118930879432},{"medida":"moda","agrupada":41023.61414958883,"exacta":40185.0,"diferencia":838.6141495888296,"diferencia_pct":2.0868835376106247},{"medida":"Q1","agrupada":38300.90222328473,"exacta":40185.0,"diferencia":-1884.0977767152726,"diferencia_pct":-4.688559852470505},{"medida":"Q2","agrupada":40642.71192923739,"exacta":40185.0,"diferencia":457.71192923739,"diferencia_pct":1.1390118930879432},{"medida":"Q3","agrupada":42984.52163519005,"exacta":40185.0,"diferencia":2799.5216351900526,"diferencia_pct":6.966583638646393},{"medida":"varianza","agrupada":40573848.15803555,"exacta":41291877.728470795,"diferencia":-718029.5704352483,"diferencia_pct":-1.7389123719606632},{"medida":"desviacion","agrupada":6369.760447460763,"exacta":6425.875639044907,"diferencia":-56.11519158414376,"diferencia_pct":-0.8732691812953338},{"medida":"cv","agrupada":16.060206284408572,"exacta":16.360632687655347,"diferencia":-0.3004264032467745,"diferencia_pct":-1.8362761940952101}],"extra_cfm":{"ceros":45,"valor_mas_frecuente_pct":0.6512428298279158,"distintos":135,"pct_en_clase_modal":0.7998087954110898,"sobre_Q3":904,"hasta_Q1":4326,"pct_hasta_100k":1.0},"cfm_frecuencias":[[0.0,45],[349.0,1],[698.0,1],[1094.0,1],[1172.0,1],[1745.0,1],[3501.0,1],[5000.0,3],[7678.0,1],[8524.0,1],[9000.0,1],[9489.0,1],[9672.0,1],[10501.0,1],[11047.0,1],[11386.0,1],[11501.0,1],[12501.0,1],[13000.0,1],[16000.0,1],[16359.0,2],[17000.0,1],[17192.0,7],[18000.0,2],[18859.0,1],[20050.0,1],[20214.0,1],[20221.0,45],[20260.0,1],[21232.0,1],[23150.0,3],[23560.0,1],[24139.0,1],[24313.0,1],[26007.0,2],[26259.0,1],[26976.0,1],[27265.0,1],[27685.0,126],[28062.0,8],[29027.0,2],[29161.0,5],[29950.0,19],[30117.0,1],[30369.0,11],[30872.0,8],[31000.0,1],[31418.0,33],[31879.0,72],[32047.0,1],[32215.0,6],[32374.0,1],[32501.0,1],[32503.0,2],[32634.0,49],[32998.0,1],[33000.0,3],[33339.0,16],[33347.0,10],[33641.0,15],[34000.0,1],[34396.0,64],[34454.0,1],[35000.0,2],[35990.0,2],[36000.0,3],[36028.0,5],[36116.0,2],[36577.0,33],[36829.0,72],[36913.0,120],[36955.0,3],[37668.0,11],[38000.0,1],[38339.0,55],[38340.0,1],[39289.0,5],[39346.0,3],[39369.0,2],[39430.0,4],[40185.0,3406],[40340.0,1],[41305.0,1],[41401.0,1],[41527.0,1],[41862.0,19],[41946.0,2],[42194.0,2],[42425.0,1],[42701.0,650],[43047.0,1],[43289.0,8],[43779.0,1],[43862.0,2],[44804.0,1],[44878.0,4],[45000.0,1],[45386.0,53],[46057.0,4],[46243.0,2],[46245.0,1],[46708.0,1],[47377.0,1],[47567.0,1],[47735.0,5],[47819.0,5],[48784.0,1],[50160.0,1],[50252.0,3],[51049.0,11],[51426.0,1],[51678.0,1],[51930.0,18],[52097.0,56],[52553.0,1],[52676.0,2],[53775.0,2],[55369.0,1],[56795.0,2],[57215.0,1],[57351.0,1],[58683.0,4],[60990.0,2],[62919.0,2],[64021.0,1],[67030.0,7],[67467.0,3],[68918.0,1],[69128.0,1],[69547.0,1],[69757.0,2],[74329.0,5],[77852.0,2],[92099.0,1],[97392.0,1]],"antiguedad":{"n":5227,"faltantes":3,"media":9.12091065620815,"mediana":1.0,"moda":1,"Q1":1.0,"Q3":3.0,"varianza":989.8395684013158,"desviacion":31.461715916353256,"min":0,"max":296,"pct_moda":0.46298067725272624,"cv":344.9405119974378},"antiguedad_tramos":[{"tramo":"0–3 meses","f":4021,"h":0.76927491869141,"H":0.76927491869141},{"tramo":"4–12 meses","f":771,"h":0.14750334800076526,"H":0.9167782666921752},{"tramo":"13–36 meses","f":144,"h":0.027549263439831644,"H":0.9443275301320069},{"tramo":"37–120 meses","f":141,"h":0.02697532045150182,"H":0.9713028505835087},{"tramo":"Más de 120 meses","f":150,"h":0.028697149416491294,"H":1.0}],"antiguedad_frecuencias":[[0,572],[1,2420],[2,659],[3,370],[4,318],[5,190],[6,122],[7,59],[8,35],[9,18],[10,16],[11,11],[12,2],[13,8],[14,12],[15,10],[16,5],[17,1],[18,3],[20,2],[21,2],[22,2],[23,3],[24,7],[25,6],[26,6],[27,7],[28,16],[29,7],[30,15],[31,3],[32,7],[33,5],[34,5],[35,6],[36,6],[37,14],[38,6],[39,3],[40,7],[41,1],[42,3],[43,3],[44,2],[45,1],[47,6],[48,7],[49,4],[50,4],[51,1],[52,2],[53,2],[54,1],[55,1],[56,2],[59,4],[60,1],[61,4],[62,4],[63,1],[64,2],[65,2],[66,1],[67,3],[73,1],[74,1],[75,1],[76,1],[77,1],[78,1],[80,1],[81,3],[82,1],[83,3],[84,1],[85,3],[87,1],[88,1],[89,3],[90,2],[91,2],[92,1],[94,1],[96,1],[97,1],[98,2],[99,2],[100,2],[101,1],[103,1],[105,1],[106,2],[107,1],[108,1],[109,1],[110,1],[111,1],[117,1],[119,1],[121,1],[122,1],[124,2],[125,1],[126,2],[127,3],[128,5],[129,4],[130,3],[131,3],[132,3],[133,2],[134,2],[135,4],[136,1],[137,2],[138,1],[139,2],[141,2],[143,1],[144,2],[145,3],[146,1],[148,3],[149,2],[152,1],[153,3],[155,1],[157,2],[158,2],[159,2],[160,1],[161,2],[163,2],[164,1],[165,2],[167,1],[169,2],[170,5],[171,2],[172,3],[173,2],[174,4],[175,2],[178,1],[179,1],[180,1],[181,2],[183,1],[185,2],[186,2],[187,1],[189,1],[190,1],[191,1],[192,1],[193,1],[195,1],[196,1],[205,1],[206,1],[208,1],[209,1],[211,1],[212,1],[214,1],[215,1],[217,1],[221,1],[224,1],[226,1],[232,2],[234,3],[237,1],[238,1],[240,1],[243,2],[244,1],[245,1],[247,1],[251,1],[255,1],[258,1],[261,1],[268,1],[269,1],[272,1],[277,1],[278,1],[280,1],[296,1]],"proporciones":{"BAN_BANCA":{"f":341,"n":5230,"p":0.06520076481835564},"BAN_BILLETERA":{"f":112,"n":5230,"p":0.02141491395793499},"BAN_PAGOS_ONLINE":{"f":198,"n":5230,"p":0.0378585086042065},"BAN_SUPRESION_I":{"f":4583,"n":5230,"p":0.8762906309751434},"BANCA_Y_PAGOS":{"f":175,"n":5230,"p":0.033460803059273424},"ALGUNA_FINANCIERA":{"f":368,"n":5230,"p":0.07036328871892926},"CONTACTABLES":{"f":647,"n":5230,"p":0.1237093690248566},"BANCA_EN_CONTACTABLES":{"f":194,"n":647,"p":0.29984544049459044},"BANCA_EN_RESTRINGIDOS":{"f":147,"n":4583,"p":0.032075060004363956}},"validacion":[{"indicador":"Σ fᵢ = n","manual":5230.0,"computacional":5230.0,"diferencia":0.0,"tolerancia":0,"cumple":true,"observacion":"suma de frecuencias absolutas"},{"indicador":"Σ hᵢ = 1","manual":1.0,"computacional":1.0,"diferencia":0.0,"tolerancia":1e-09,"cumple":true,"observacion":"suma de frecuencias relativas"},{"indicador":"Media agrupada","manual":39661.75984703633,"computacional":39661.75984703633,"diferencia":0.0,"tolerancia":1e-06,"cumple":true,"observacion":"lazo manual vs np.average con pesos"},{"indicador":"Varianza agrupada","manual":40573848.15803555,"computacional":40573848.15803554,"diferencia":7.450580596923828e-09,"tolerancia":0.001,"cumple":true,"observacion":"lazo manual vs operación vectorizada"},{"indicador":"Media agrupada vs. marcas repetidas","manual":39661.75984703633,"computacional":39661.75984703633,"diferencia":0.0,"tolerancia":1e-06,"cumple":true,"observacion":"np.repeat de las marcas"},{"indicador":"Media exacta","manual":39276.44952198853,"computacional":39276.44952198853,"diferencia":0.0,"tolerancia":1e-06,"cumple":true,"observacion":"Σx/n vs np.mean"},{"indicador":"Varianza exacta","manual":41291877.72847437,"computacional":41291877.728470795,"diferencia":3.5762786865234375e-06,"tolerancia":0.01,"cumple":true,"observacion":"Σ(x−x̄)²/(n−1) vs np.var(ddof=1)"},{"indicador":"Mediana exacta","manual":40185.0,"computacional":40185.0,"diferencia":0.0,"tolerancia":0,"cumple":true,"observacion":"posición central ordenada vs np.median"},{"indicador":"Moda exacta","manual":40185.0,"computacional":40185.0,"diferencia":0.0,"tolerancia":0,"cumple":true,"observacion":"conteo manual vs statistics.mode"}]},"regresion":{"n":5227,"excluidos":3,"sumas":{"n":5227,"Sx":47675.0,"Sy":205234418.0,"Sxy":1610148608.0,"Sxx":5607741.0,"Syy":8272401082654.0,"num":-1368304104134.0,"den_x":27038756582.0,"den_y":1118674127233736.0,"xbar":9.12091065620815,"ybar":39264.28505835087},"b":-50.60528948453551,"a":39725.851382470864,"r":-0.2487926091467854,"R2":0.06189776236606512,"scipy":{"slope":-50.60528948453547,"intercept":39725.851382470864,"rvalue":-0.24879260914678558,"pvalue":1.410465434338254e-74,"stderr":2.7254635451379374},"residuos":{"media":3.363059804068712e-12,"sd":6198.204915237164,"atipicos":167,"hist":[10,0,26,11,8,5,10,52,5,7,141,140,149,208,3504,692,78,25,13,67,24,8,7,7,6,5,3,8,2,2,1,0,1,0,0,1,0,0,0,1],"bordes":[-39169.19319814097,-36485.16214742963,-33801.131096718294,-31117.10004600696,-28433.068995295624,-25749.037944584285,-23065.006893872946,-20380.97584316161,-17696.94479245027,-15012.913741738932,-12328.882691027597,-9644.851640316258,-6960.8205896049185,-4276.789538893579,-1592.7584881822477,1091.2725625290914,3775.3036132404304,6459.3346639517695,9143.365714663109,11827.39676537444,14511.42781608578,17195.45886679712,19879.489917508457,22563.520968219796,25247.552018931136,27931.583069642467,30615.614120353814,33299.645171065145,35983.67622177648,38667.70727248782,41351.738323199155,44035.7693739105,46719.80042462183,49403.831475333165,52087.86252604451,54771.89357675584,57455.92462746719,60139.95567817852,62823.98672888985,65508.0177796012,68192.04883031253]},"sensibilidad":[{"escenario":"Todos los pares válidos","n":5227,"b":-50.60528948453547,"a":39725.851382470864,"r":-0.24879260914678558,"R2":0.061897762366065215},{"escenario":"Sin cargo fijo 0","n":5182,"b":-11.54614593538978,"a":39698.66657050198,"r":-0.06349910872298979,"R2":0.004032136808614078},{"escenario":"Antigüedad mayor a 3 meses","n":1206,"b":-53.34294681856429,"a":40085.16947213819,"r":-0.2702583929320547,"R2":0.07303959895021689},{"escenario":"Sin atípicos |z|>3","n":5060,"b":-26.422929477123514,"a":39898.94347602655,"r":-0.17048083997004448,"R2":0.029063716796891917}],"por_tramo":[{"tramo":"0–3","size":4021,"mean":39586.22780402885,"median":40185.0},{"tramo":"4–12","size":771,"mean":40920.67055771725,"median":42701.0},{"tramo":"13–36","size":144,"mean":33777.13888888889,"median":36577.0},{"tramo":"37–120","size":141,"mean":39088.304964539006,"median":36829.0},{"tramo":">120","size":150,"mean":27553.333333333332,"median":31418.0}],"nube":[[1.0,40185.0,2162.0],[0.0,40185.0,529.0],[2.0,40185.0,441.0],[3.0,40185.0,160.0],[4.0,42701.0,154.0],[3.0,42701.0,129.0],[5.0,42701.0,125.0],[4.0,40185.0,95.0],[2.0,42701.0,91.0],[6.0,42701.0,77.0],[1.0,27685.0,60.0],[1.0,36913.0,55.0],[2.0,27685.0,53.0],[1.0,32634.0,36.0],[7.0,42701.0,24.0],[1.0,31879.0,23.0],[2.0,36913.0,22.0],[3.0,36829.0,18.0],[5.0,34396.0,18.0],[4.0,34396.0,16.0],[0.0,36913.0,15.0],[1.0,20221.0,15.0],[2.0,31879.0,13.0],[1.0,42701.0,12.0],[3.0,31879.0,12.0],[5.0,31879.0,12.0],[5.0,40185.0,12.0],[8.0,42701.0,11.0],[3.0,36913.0,11.0],[4.0,31879.0,11.0],[5.0,52097.0,10.0],[4.0,36829.0,10.0],[6.0,34396.0,10.0],[1.0,45386.0,10.0],[3.0,34396.0,9.0],[7.0,52097.0,9.0],[1.0,41862.0,8.0],[28.0,38339.0,8.0],[6.0,36829.0,8.0],[30.0,33641.0,8.0],[3.0,52097.0,7.0],[0.0,37668.0,7.0],[2.0,20221.0,7.0],[8.0,45386.0,7.0],[2.0,41862.0,6.0],[2.0,34396.0,6.0],[4.0,52097.0,6.0],[1.0,36829.0,6.0],[0.0,43289.0,6.0],[4.0,20221.0,6.0],[37.0,30369.0,6.0],[6.0,45386.0,6.0],[6.0,40185.0,6.0],[9.0,42701.0,5.0],[25.0,38339.0,5.0],[26.0,38339.0,5.0],[6.0,52097.0,5.0],[1.0,36028.0,5.0],[3.0,45386.0,5.0],[0.0,20221.0,5.0],[5.0,45386.0,5.0],[15.0,28062.0,5.0],[1.0,47735.0,5.0],[10.0,52097.0,5.0],[24.0,38339.0,4.0],[36.0,38339.0,4.0],[48.0,38339.0,4.0],[3.0,41862.0,4.0],[8.0,52097.0,4.0],[2.0,45386.0,4.0],[7.0,29161.0,4.0],[4.0,36913.0,4.0],[3.0,27685.0,4.0],[1.0,37668.0,4.0],[9.0,52097.0,4.0],[28.0,31418.0,4.0],[7.0,45386.0,4.0],[4.0,47819.0,3.0],[27.0,38339.0,3.0],[47.0,38339.0,3.0],[40.0,30872.0,3.0],[10.0,33339.0,3.0],[7.0,33339.0,3.0],[16.0,0.0,3.0],[7.0,34396.0,3.0],[37.0,38339.0,3.0],[5.0,36829.0,3.0],[35.0,36577.0,3.0],[1.0,17192.0,3.0],[7.0,32634.0,3.0],[7.0,36913.0,3.0],[4.0,45386.0,3.0],[7.0,36829.0,3.0],[34.0,36577.0,3.0],[33.0,36577.0,3.0],[6.0,20221.0,3.0],[13.0,31418.0,3.0],[38.0,30369.0,3.0],[14.0,28062.0,3.0],[9.0,45386.0,3.0],[32.0,36577.0,3.0],[14.0,31418.0,3.0],[0.0,32634.0,3.0],[1.0,74329.0,3.0],[131.0,0.0,2.0],[159.0,0.0,2.0],[153.0,0.0,2.0],[38.0,30872.0,2.0],[23.0,42701.0,2.0],[2.0,52097.0,2.0],[4.0,33339.0,2.0],[30.0,36829.0,2.0],[137.0,0.0,2.0],[11.0,42701.0,2.0],[10.0,42701.0,2.0],[11.0,52097.0,2.0],[10.0,36829.0,2.0],[8.0,36829.0,2.0],[0.0,23150.0,2.0],[30.0,38339.0,2.0],[29.0,38339.0,2.0],[29.0,33641.0,2.0],[6.0,36913.0,2.0],[36.0,31418.0,2.0],[165.0,44878.0,2.0],[2.0,36829.0,2.0],[31.0,36577.0,2.0],[43.0,36577.0,2.0],[3.0,20221.0,2.0],[5.0,20221.0,2.0],[8.0,20221.0,2.0],[8.0,27685.0,2.0],[172.0,0.0,2.0],[62.0,51930.0,2.0],[3.0,50252.0,2.0],[67.0,29950.0,2.0],[28.0,33641.0,2.0],[8.0,36913.0,2.0],[14.0,45386.0,2.0],[27.0,31418.0,2.0],[47.0,36577.0,2.0],[56.0,36577.0,2.0],[15.0,31418.0,2.0],[50.0,31418.0,2.0],[8.0,33339.0,2.0],[89.0,51930.0,2.0],[32.0,29950.0,2.0],[32.0,33641.0,2.0],[10.0,45386.0,2.0],[29.0,31418.0,2.0],[9.0,33339.0,2.0],[173.0,0.0,2.0],[4.0,67467.0,2.0],[2.0,32634.0,2.0],[2.0,74329.0,2.0],[1.0,39346.0,2.0],[132.0,34000.0,1.0],[128.0,9489.0,1.0],[126.0,0.0,1.0],[127.0,0.0,1.0],[134.0,0.0,1.0],[192.0,0.0,1.0],[148.0,0.0,1.0],[183.0,0.0,1.0],[141.0,0.0,1.0],[169.0,0.0,1.0],[170.0,698.0,1.0],[25.0,44804.0,1.0],[3.0,62919.0,1.0],[0.0,41862.0,1.0],[247.0,60990.0,1.0],[2.0,47819.0,1.0],[243.0,53775.0,1.0],[2.0,29027.0,1.0],[244.0,50160.0,1.0],[2.0,46057.0,1.0],[221.0,69547.0,1.0],[12.0,42701.0,1.0],[27.0,42701.0,1.0],[145.0,38339.0,1.0],[80.0,38339.0,1.0],[148.0,38339.0,1.0],[29.0,30872.0,1.0],[37.0,30872.0,1.0],[21.0,42701.0,1.0],[30.0,42701.0,1.0],[4.0,35990.0,1.0],[2.0,42194.0,1.0],[2.0,52553.0,1.0],[6.0,26007.0,1.0],[2.0,33339.0,1.0],[3.0,33339.0,1.0],[11.0,0.0,1.0],[20.0,0.0,1.0],[141.0,44878.0,1.0],[128.0,57215.0,1.0],[128.0,51426.0,1.0],[34.0,46243.0,1.0],[49.0,47377.0,1.0],[175.0,51049.0,1.0],[66.0,51049.0,1.0],[85.0,51049.0,1.0],[98.0,51049.0,1.0],[100.0,51049.0,1.0],[206.0,51049.0,1.0],[75.0,51049.0,1.0],[280.0,58683.0,1.0],[88.0,58683.0,1.0],[78.0,36829.0,1.0],[42.0,36829.0,1.0],[62.0,36829.0,1.0],[24.0,36829.0,1.0],[245.0,36829.0,1.0],[31.0,36829.0,1.0],[73.0,36829.0,1.0],[1.0,20050.0,1.0],[208.0,97392.0,1.0],[24.0,0.0,1.0],[4.0,13000.0,1.0],[126.0,9672.0,1.0],[128.0,11501.0,1.0],[130.0,18000.0,1.0],[171.0,36000.0,1.0],[186.0,0.0,1.0],[130.0,16000.0,1.0],[232.0,9000.0,1.0],[135.0,1745.0,1.0],[214.0,24139.0,1.0],[190.0,11386.0,1.0],[163.0,1094.0,1.0],[8.0,62919.0,1.0],[1.0,50252.0,1.0],[101.0,69757.0,1.0],[13.0,53775.0,1.0],[40.0,42425.0,1.0],[1.0,29027.0,1.0],[1.0,46057.0,1.0],[0.0,46057.0,1.0],[81.0,42701.0,1.0],[35.0,42701.0,1.0],[195.0,38339.0,1.0],[209.0,38339.0,1.0],[107.0,38339.0,1.0],[83.0,38339.0,1.0],[49.0,38339.0,1.0],[35.0,38339.0,1.0],[44.0,38339.0,1.0],[33.0,38339.0,1.0],[39.0,30872.0,1.0],[63.0,34396.0,1.0],[74.0,42701.0,1.0],[117.0,42701.0,1.0],[121.0,42701.0,1.0],[90.0,42701.0,1.0],[85.0,42701.0,1.0],[20.0,17192.0,1.0],[60.0,56795.0,1.0],[119.0,20214.0,1.0],[3.0,26007.0,1.0],[238.0,46708.0,1.0],[3.0,35990.0,1.0],[6.0,33339.0,1.0],[59.0,92099.0,1.0],[21.0,0.0,1.0],[22.0,0.0,1.0],[171.0,68918.0,1.0],[170.0,60990.0,1.0],[153.0,46243.0,1.0],[111.0,51049.0,1.0],[130.0,51049.0,1.0],[76.0,51049.0,1.0],[106.0,51049.0,1.0],[90.0,58683.0,1.0],[234.0,36829.0,1.0],[99.0,36829.0,1.0],[45.0,36829.0,1.0],[40.0,36829.0,1.0],[39.0,36829.0,1.0],[65.0,36829.0,1.0],[160.0,55369.0,1.0],[1.0,39430.0,1.0],[37.0,48784.0,1.0],[240.0,43779.0,1.0],[135.0,5000.0,1.0],[144.0,8524.0,1.0],[128.0,18859.0,1.0],[157.0,0.0,1.0],[158.0,26259.0,1.0],[139.0,5000.0,1.0],[138.0,18000.0,1.0],[158.0,0.0,1.0],[170.0,3501.0,1.0],[14.0,42701.0,1.0],[22.0,42701.0,1.0],[85.0,38339.0,1.0],[15.0,42701.0,1.0],[55.0,42701.0,1.0],[47.0,42701.0,1.0],[4.0,41305.0,1.0],[181.0,56795.0,1.0],[3.0,42194.0,1.0],[48.0,40340.0,1.0],[181.0,51930.0,1.0],[61.0,51930.0,1.0],[18.0,32634.0,1.0],[127.0,64021.0,1.0],[105.0,32047.0,1.0],[27.0,33641.0,1.0],[296.0,39430.0,1.0],[26.0,31418.0,1.0],[40.0,0.0,1.0],[35.0,36829.0,1.0],[258.0,36829.0,1.0],[52.0,36829.0,1.0],[9.0,34396.0,1.0],[0.0,21232.0,1.0],[84.0,38340.0,1.0],[0.0,51678.0,1.0],[1.0,43289.0,1.0],[64.0,36577.0,1.0],[44.0,36577.0,1.0],[129.0,36577.0,1.0],[172.0,36577.0,1.0],[174.0,36577.0,1.0],[4.0,41946.0,1.0],[7.0,20221.0,1.0],[108.0,31418.0,1.0],[277.0,31418.0,1.0],[170.0,31418.0,1.0],[180.0,33347.0,1.0],[48.0,33347.0,1.0],[7.0,27685.0,1.0],[4.0,27685.0,1.0],[14.0,27685.0,1.0],[0.0,27685.0,1.0],[9.0,27685.0,1.0],[178.0,27685.0,1.0],[135.0,0.0,1.0],[144.0,0.0,1.0],[155.0,0.0,1.0],[143.0,0.0,1.0],[157.0,33000.0,1.0],[43.0,24313.0,1.0],[8.0,40185.0,1.0],[145.0,51930.0,1.0],[255.0,57351.0,1.0],[30.0,39369.0,1.0],[87.0,39289.0,1.0],[163.0,39289.0,1.0],[161.0,39289.0,1.0],[5.0,67030.0,1.0],[91.0,29950.0,1.0],[92.0,29950.0,1.0],[81.0,29950.0,1.0],[187.0,29950.0,1.0],[134.0,45386.0,1.0],[14.0,33347.0,1.0],[49.0,33347.0,1.0],[62.0,33347.0,1.0],[122.0,31418.0,1.0],[18.0,29161.0,1.0],[96.0,32215.0,1.0],[13.0,0.0,1.0],[103.0,46245.0,1.0],[18.0,34454.0,1.0],[13.0,31879.0,1.0],[124.0,36577.0,1.0],[89.0,36577.0,1.0],[251.0,36577.0,1.0],[125.0,36577.0,1.0],[261.0,36577.0,1.0],[81.0,36577.0,1.0],[211.0,36577.0,1.0],[268.0,36577.0,1.0],[59.0,41527.0,1.0],[226.0,67030.0,1.0],[53.0,67030.0,1.0],[278.0,67030.0,1.0],[179.0,67030.0,1.0],[6.0,41946.0,1.0],[16.0,20221.0,1.0],[49.0,31418.0,1.0],[98.0,31418.0,1.0],[37.0,31418.0,1.0],[61.0,31418.0,1.0],[48.0,31418.0,1.0],[61.0,69128.0,1.0],[145.0,30369.0,1.0],[50.0,30369.0,1.0],[97.0,33347.0,1.0],[37.0,33347.0,1.0],[61.0,33347.0,1.0],[51.0,33347.0,1.0],[39.0,33347.0,1.0],[37.0,32374.0,1.0],[11.0,32503.0,1.0],[9.0,32503.0,1.0],[6.0,27685.0,1.0],[129.0,0.0,1.0],[186.0,12501.0,1.0],[232.0,26976.0,1.0],[205.0,43047.0,1.0],[174.0,0.0,1.0],[152.0,35000.0,1.0],[132.0,11047.0,1.0],[146.0,0.0,1.0],[185.0,33000.0,1.0],[217.0,45000.0,1.0],[234.0,1172.0,1.0],[237.0,0.0,1.0],[170.0,5000.0,1.0],[16.0,17192.0,1.0],[1.0,47819.0,1.0],[50.0,51930.0,1.0],[100.0,51930.0,1.0],[131.0,29950.0,1.0],[28.0,29950.0,1.0],[185.0,29950.0,1.0],[83.0,29950.0,1.0],[129.0,39430.0,1.0],[9.0,36913.0,1.0],[110.0,36913.0,1.0],[42.0,36913.0,1.0],[14.0,36116.0,1.0],[1.0,20260.0,1.0],[23.0,36955.0,1.0],[24.0,36955.0,1.0],[193.0,36955.0,1.0],[12.0,32215.0,1.0],[11.0,32215.0,1.0],[38.0,32215.0,1.0],[59.0,32215.0,1.0],[136.0,36000.0,1.0],[149.0,35000.0,1.0],[129.0,7678.0,1.0],[132.0,0.0,1.0],[234.0,0.0,1.0],[133.0,32501.0,1.0],[175.0,17000.0,1.0],[189.0,10501.0,1.0],[135.0,32998.0,1.0],[149.0,349.0,1.0],[212.0,0.0,1.0],[174.0,38000.0,1.0],[148.0,31000.0,1.0],[174.0,33000.0,1.0],[167.0,23560.0,1.0],[1.0,23150.0,1.0],[6.0,17192.0,1.0],[2.0,17192.0,1.0],[133.0,51930.0,1.0],[52.0,51930.0,1.0],[124.0,51930.0,1.0],[99.0,51930.0,1.0],[169.0,51930.0,1.0],[53.0,51930.0,1.0],[65.0,51930.0,1.0],[191.0,77852.0,1.0],[106.0,69757.0,1.0],[10.0,32634.0,1.0],[272.0,39369.0,1.0],[91.0,39289.0,1.0],[67.0,39289.0,1.0],[94.0,29950.0,1.0],[34.0,29950.0,1.0],[33.0,29950.0,1.0],[224.0,29950.0,1.0],[42.0,29950.0,1.0],[127.0,29950.0,1.0],[82.0,39430.0,1.0],[109.0,36913.0,1.0],[83.0,36913.0,1.0],[15.0,52097.0,1.0],[17.0,45386.0,1.0],[3.0,16359.0,1.0],[40.0,16359.0,1.0],[11.0,27265.0,1.0],[28.0,47567.0,1.0],[15.0,36116.0,1.0],[77.0,31418.0,1.0],[269.0,46057.0,1.0],[1.0,67467.0,1.0],[41.0,52676.0,1.0],[11.0,33339.0,1.0],[139.0,0.0,1.0],[11.0,36000.0,1.0],[59.0,51930.0,1.0],[196.0,51930.0,1.0],[3.0,32634.0,1.0],[11.0,32634.0,1.0],[7.0,67030.0,1.0],[8.0,67030.0,1.0],[164.0,29950.0,1.0],[5.0,36913.0,1.0],[243.0,43862.0,1.0],[161.0,43862.0,1.0],[64.0,31418.0,1.0],[30.0,31418.0,1.0],[10.0,20221.0,1.0],[13.0,41401.0,1.0],[5.0,43289.0,1.0],[4.0,32634.0,1.0],[13.0,52097.0,1.0],[1.0,52676.0,1.0],[215.0,30117.0,1.0],[54.0,32215.0,1.0],[2.0,39346.0,1.0]],"validacion":[{"indicador":"Pendiente b","manual":-50.60528948453551,"computacional":-50.60528948453547,"tolerancia":1e-06,"diferencia":4.263256414560601e-14,"cumple":true,"observacion":"sumas manuales vs scipy.stats.linregress"},{"indicador":"Intercepto a","manual":39725.851382470864,"computacional":39725.851382470864,"tolerancia":0.0001,"diferencia":0.0,"cumple":true,"observacion":"sumas manuales vs scipy.stats.linregress"},{"indicador":"Correlación r","manual":-0.2487926091467854,"computacional":-0.24879260914678558,"tolerancia":1e-09,"diferencia":1.942890293094024e-16,"cumple":true,"observacion":"sumas manuales vs scipy.stats.linregress"},{"indicador":"R²","manual":0.06189776236606512,"computacional":0.061897762366065215,"tolerancia":1e-09,"diferencia":9.71445146547012e-17,"cumple":true,"observacion":"sumas manuales vs scipy.stats.linregress"},{"indicador":"r (numpy.corrcoef)","manual":-0.2487926091467854,"computacional":-0.2487926091467862,"tolerancia":1e-09,"diferencia":8.049116928532385e-16,"cumple":true,"observacion":"vs numpy"}],"x_rango":[0.0,296.0]},"probabilidad":{"N":5230,"perfiles":[{"banca":false,"billetera":false,"pagos":false,"registros":4862,"pct":0.9296367112810707,"etiqueta":"Ninguna"},{"banca":true,"billetera":false,"pagos":false,"registros":162,"pct":0.030975143403441683,"etiqueta":"Banca"},{"banca":true,"billetera":true,"pagos":true,"registros":92,"pct":0.017590822179732315,"etiqueta":"Banca + Billetera + Pagos"},{"banca":true,"billetera":false,"pagos":true,"registros":83,"pct":0.01586998087954111,"etiqueta":"Banca + Pagos"},{"banca":false,"billetera":true,"pagos":true,"registros":12,"pct":0.002294455066921606,"etiqueta":"Billetera + Pagos"},{"banca":false,"billetera":false,"pagos":true,"registros":11,"pct":0.002103250478011472,"etiqueta":"Pagos"},{"banca":true,"billetera":true,"pagos":false,"registros":4,"pct":0.0007648183556405354,"etiqueta":"Banca + Billetera"},{"banca":false,"billetera":true,"pagos":false,"registros":4,"pct":0.0007648183556405354,"etiqueta":"Billetera"}],"total_teorico":8,"observados":8,"con_supresion":16,"campanas":["Banca digital","Billetera","Pagos en línea"],"ordenes_A":[["Banca digital","Billetera","Pagos en línea"],["Banca digital","Pagos en línea","Billetera"],["Billetera","Banca digital","Pagos en línea"],["Billetera","Pagos en línea","Banca digital"],["Pagos en línea","Banca digital","Billetera"],["Pagos en línea","Billetera","Banca digital"]],"P33":6,"P53":60,"C53":10,"orden_datos":["Banca digital","Pagos en línea","Billetera"],"K_piloto":194,"C_piloto_log10":16.215830135559663,"C_muestra_log10":55.96811208659887,"probs":{"P(Banca)":0.06520076481835564,"P(Billetera)":0.02141491395793499,"P(Pagos)":0.0378585086042065,"P(Restricción)":0.8762906309751434,"P(Banca ∩ Pagos)":0.033460803059273424,"P(Banca ∪ Pagos)":0.06959847036328871,"P(al menos una financiera)":0.07036328871892926,"P(ninguna financiera)":0.9296367112810707,"P(Pagos | Banca)":0.5131964809384164,"P(Banca | contactable)":0.29984544049459044,"P(Banca | restringido)":0.032075060004363956},"escenarios":{"E":{"N":5230,"K":341,"m":20,"dist":[0.2589784804590562,0.36267622930816495,0.24049357845727218,0.10040310726233408,0.02959759154162588,0.006548634123612914,0.0011283800336071483,0.0001550481178254285,1.725494483283808e-05,1.5705607842927652e-06,1.1755867973431396e-07,7.24886791953389e-09,3.675670579972624e-10,1.5243382230624186e-11,5.119628682822787e-13,1.3711044875373064e-14,2.859391395452673e-16,4.475221899410652e-18,4.944996573934422e-20,3.439645734733436e-22,1.1327121360034427e-24],"P0":0.2589784804590562,"P1":0.36267622930816495,"P_al_menos_1":0.7410215195409438,"P_al_menos_3":0.13785171177550665,"P_al_menos_5":0.007851012971546681,"esperado":1.3040152963671128,"media_scipy":1.3040152963671128,"moda":1},"F":{"N":647,"K":194,"m":20,"dist":[0.0007045142405038899,0.00629842224229284,0.026547487772974533,0.07014382090474006,0.13029575885451428,0.1808671721085495,0.19466910893232262,0.16635360217853024,0.11462743959637388,0.06431584846131384,0.029544639191596767,0.011130658499700666,0.003432995233896441,0.000862097457839465,0.00017454098419344874,2.805122960251855e-05,3.4946896567725643e-06,3.2525739027739423e-07,2.12751508052841e-08,8.72013633379134e-10,1.684353044606495e-11],"P0":0.0007045142405038899,"P1":0.00629842224229284,"P_al_menos_1":0.9992954857594961,"P_al_menos_3":0.9664495757442287,"P_al_menos_5":0.7660099959849744,"esperado":5.996908809891808,"media_scipy":5.996908809891808,"moda":6}},"conteos":[{"universo":"Todos los elegibles","indicador":"Banca digital","N":5230,"K":341},{"universo":"Todos los elegibles","indicador":"Billetera","N":5230,"K":112},{"universo":"Todos los elegibles","indicador":"Pagos en línea","N":5230,"K":198},{"universo":"Todos los elegibles","indicador":"Alguna financiera","N":5230,"K":368},{"universo":"Contactables","indicador":"Banca digital","N":647,"K":194},{"universo":"Contactables","indicador":"Billetera","N":647,"K":66},{"universo":"Contactables","indicador":"Pagos en línea","N":647,"K":112},{"universo":"Contactables","indicador":"Alguna financiera","N":647,"K":212},{"universo":"Con restricción","indicador":"Banca digital","N":4583,"K":147},{"universo":"Con restricción","indicador":"Billetera","N":4583,"K":46},{"universo":"Con restricción","indicador":"Pagos en línea","N":4583,"K":86},{"universo":"Con restricción","indicador":"Alguna financiera","N":4583,"K":156}],"validacion":[{"indicador":"Perfiles teóricos (2·2·2)","manual":8.0,"computacional":8.0,"diferencia":0.0,"tolerancia":0,"cumple":true,"observacion":"producto manual vs enumeración con itertools.product"},{"indicador":"P(3,3)","manual":6.0,"computacional":6.0,"diferencia":0.0,"tolerancia":0,"cumple":true,"observacion":"n!/(n−m)! vs enumeración itertools.permutations"},{"indicador":"P(5,3)","manual":60.0,"computacional":60.0,"diferencia":0.0,"tolerancia":0,"cumple":true,"observacion":"n!/(n−m)! vs math.perm"},{"indicador":"C(5,3)","manual":10.0,"computacional":10.0,"diferencia":0.0,"tolerancia":0,"cumple":true,"observacion":"fórmula factorial vs math.comb"},{"indicador":"P(5,3) = C(5,3)·3!","manual":60.0,"computacional":60.0,"diferencia":0.0,"tolerancia":0,"cumple":true,"observacion":"relación permutación–combinación"},{"indicador":"P(Banca ∪ Pagos) por suma de probabilidades","manual":0.06959847036328873,"computacional":0.06959847036328871,"diferencia":1.3877787807814457e-17,"tolerancia":1e-12,"cumple":true,"observacion":"P(A)+P(B)−P(A∩B) vs conteo directo"},{"indicador":"p̂ Banca","manual":0.06520076481835564,"computacional":0.06520076481835564,"diferencia":0.0,"tolerancia":1e-12,"cumple":true,"observacion":"f/n manual vs value_counts(normalize=True)"},{"indicador":"Hipergeométrica E: P(X=1)","manual":0.36267622930816495,"computacional":0.36267622930816507,"diferencia":1.1102230246251565e-16,"tolerancia":1e-12,"cumple":true,"observacion":"combinaciones manuales vs scipy.stats.hypergeom"},{"indicador":"Hipergeométrica F: P(X=1)","manual":0.00629842224229284,"computacional":0.006298422242292839,"diferencia":8.673617379884035e-19,"tolerancia":1e-12,"cumple":true,"observacion":"combinaciones manuales vs scipy.stats.hypergeom"}]},"ciencia":{"calidad":[{"problema":"EDAD = 0 en cédulas (edad faltante codificada como cero)","proporcion":0.20744444444444443,"decision":"Excluidos de la población"},{"problema":"Registros de empresas (NIT)","proporcion":0.20877777777777778,"decision":"Excluidos: la población son personas naturales"},{"problema":"Estrato sin dato ('Se')","proporcion":0.8695555555555555,"decision":"Variable descartada"},{"problema":"Tecnología del equipo sin dato","proporcion":0.8396666666666667,"decision":"Variables de terminal descartadas"},{"problema":"Región comercial vacía","proporcion":1.0,"decision":"Se usa departamento"},{"problema":"Género sin dato ('ND')","proporcion":0.36944444444444446,"decision":"Solo descriptivo"},{"problema":"Banderas constantes (35 de 88 columnas)","proporcion":0.3977272727272727,"decision":"Excluidas del modelado"},{"problema":"Registros con atributos idénticos a otro (ID distinto)","proporcion":0.09888888888888889,"decision":"Se conservan: son líneas distintas"},{"problema":"Sin ninguna bandera de interés (elegibles)","proporcion":0.8994263862332696,"decision":"Ver hallazgo 2"}],"por_mes":[{"FECHA_ACTUALIZACION":"2026-01","registros":501,"con_huella":0.17764471057884232,"banca":0.11177644710578842,"billetera":0.033932135728542916,"pagos":0.0658682634730539,"antig_mediana":3.0,"restriccion":0.872255489021956,"mes":"Enero"},{"FECHA_ACTUALIZACION":"2026-02","registros":376,"con_huella":0.21808510638297873,"banca":0.15425531914893617,"billetera":0.061170212765957445,"pagos":0.09840425531914894,"antig_mediana":5.0,"restriccion":0.8829787234042553,"mes":"Febrero"},{"FECHA_ACTUALIZACION":"2026-03","registros":455,"con_huella":0.24175824175824176,"banca":0.15384615384615385,"billetera":0.05054945054945055,"pagos":0.08571428571428572,"antig_mediana":4.0,"restriccion":0.8219780219780219,"mes":"Marzo"},{"FECHA_ACTUALIZACION":"2026-04","registros":573,"con_huella":0.1849912739965096,"banca":0.12216404886561955,"billetera":0.04013961605584642,"pagos":0.06282722513089005,"antig_mediana":1.0,"restriccion":0.8464223385689355,"mes":"Abril"},{"FECHA_ACTUALIZACION":"2026-05","registros":726,"con_huella":0.05647382920110193,"banca":0.024793388429752067,"billetera":0.009641873278236915,"pagos":0.02066115702479339,"antig_mediana":1.0,"restriccion":0.9338842975206612,"mes":"Mayo"},{"FECHA_ACTUALIZACION":"2026-06","registros":531,"con_huella":0.17702448210922786,"banca":0.128060263653484,"billetera":0.035781544256120526,"pagos":0.0696798493408663,"antig_mediana":1.0,"restriccion":0.8662900188323918,"mes":"Junio"},{"FECHA_ACTUALIZACION":"2026-07","registros":733,"con_huella":0.0,"banca":0.0,"billetera":0.0,"pagos":0.0,"antig_mediana":1.0,"restriccion":0.8117326057298773,"mes":"Julio"},{"FECHA_ACTUALIZACION":"2026-08","registros":947,"con_huella":0.004223864836325237,"banca":0.0010559662090813093,"billetera":0.0,"pagos":0.0010559662090813093,"antig_mediana":1.0,"restriccion":0.8954593453009504,"mes":"Agosto"},{"FECHA_ACTUALIZACION":"2026-10","registros":388,"con_huella":0.0,"banca":0.0,"billetera":0.0,"pagos":0.0,"antig_mediana":2.0,"restriccion":0.9639175257731959,"mes":"Octubre"}],"meses_medidos":["2026-01","2026-02","2026-03","2026-04","2026-05","2026-06"],"por_tramo":[{"tramo":"0–3 meses","registros":2118,"con_huella":0.049575070821529746,"banca":0.03588290840415486},{"tramo":"4–12 meses","registros":623,"con_huella":0.1508828250401284,"banca":0.11396468699839486},{"tramo":"13–36 meses","registros":139,"con_huella":0.8273381294964028,"banca":0.5611510791366906},{"tramo":"37–120 meses","registros":138,"con_huella":0.7753623188405797,"banca":0.5072463768115942},{"tramo":"Más de 120 meses","registros":141,"con_huella":0.7021276595744681,"banca":0.3049645390070922}],"prop_medidos":{"BAN_BANCA":0.10752688172043011,"BAN_BILLETERA":0.03542061986084757,"BAN_PAGOS_ONLINE":0.06230234029095509,"BAN_SUPRESION_I":0.8747628083491461,"n":3162},"con_huella":0.10057361376673041,"huella_por_restriccion":{"contactables":0.4760432766615147,"restringidos":0.04756709578878464},"n_interes":42,"familias":{"retail":"Consumo y retail","entretenimiento":"Entretenimiento y medios","estilo_vida":"Estilo de vida y hogar","trabajo":"Trabajo y educación","finanzas":"Finanzas y pagos","tecnologia":"Tecnología","salud":"Salud y bienestar"},"seleccion_k":[{"k":3,"silueta":0.3172947312289833,"inercia":1968.253648262736},{"k":4,"silueta":0.2909924524723851,"inercia":1632.727138367966},{"k":5,"silueta":0.2970032548422932,"inercia":1439.6639527708687},{"k":6,"silueta":0.2610395499378488,"inercia":1298.4015120106233}],"K":3,"varianza_pca":[0.4889465808796165,0.1345407024317133,0.11526200125799133],"perfiles":[{"segmento":"Sin huella digital","registros":4704.0,"pct":0.8994263862332696,"cfm_media":39593.40603741496,"cfm_mediana":40185.0,"cfm_sd":5298.833550474518,"cfm_cv":13.383121284052269,"antig_mediana":1.0,"antig_media":4.155645332766319,"banca":0.0,"billetera":0.0,"pagos":0.0,"restriccion":0.9279336734693877,"edad_media":38.41900510204081},{"segmento":"Digitales financieros","registros":280.0,"pct":0.05353728489483748,"cfm_media":39324.71785714286,"cfm_mediana":38339.0,"cfm_sd":10665.338457411912,"cfm_cv":27.121207826986815,"antig_mediana":28.0,"antig_media":47.52517985611511,"banca":0.8571428571428571,"billetera":0.32857142857142857,"pagos":0.5821428571428572,"restriccion":0.39285714285714285,"edad_media":44.21785714285714},{"segmento":"Huella básica: redes y familia","registros":218.0,"pct":0.04168260038240918,"cfm_media":32244.41743119266,"cfm_mediana":36288.5,"cfm_sd":13350.791997945802,"cfm_cv":41.40497196587739,"antig_mediana":29.5,"antig_media":63.96788990825688,"banca":0.3577981651376147,"billetera":0.045871559633027525,"pagos":0.0963302752293578,"restriccion":0.44954128440366975,"edad_media":49.174311926605505},{"segmento":"Hogar conectado (IoT)","registros":28.0,"pct":0.005353728489483747,"cfm_media":40294.46428571428,"cfm_mediana":38339.0,"cfm_sd":8962.69842171861,"cfm_cv":22.243001813269377,"antig_mediana":14.5,"antig_media":34.785714285714285,"banca":0.8214285714285714,"billetera":0.35714285714285715,"pagos":0.5,"restriccion":0.35714285714285715,"edad_media":40.392857142857146}],"afinidad":[{"segmento":"Digitales financieros","afinidades":[["clase_media",163],["turismo",162],["cine",157],["pagos_online",155]],"familias":{"retail":146,"entretenimiento":126,"estilo_vida":133,"trabajo":128,"finanzas":142,"tecnologia":0,"salud":148}},{"segmento":"Hogar conectado (IoT)","afinidades":[["tec_iot",1879],["educacion_media",361],["cajas_compensacion",317],["clase_alta",313]],"familias":{"retail":176,"entretenimiento":132,"estilo_vida":145,"trabajo":160,"finanzas":158,"tecnologia":1814,"salud":178}},{"segmento":"Huella básica: redes y familia","afinidades":[["redes_sociales",99],["familia",84],["entretenimiento",71],["empleo",66]],"familias":{"retail":31,"entretenimiento":62,"estilo_vida":52,"trabajo":56,"finanzas":38,"tecnologia":8,"salud":28}}],"puntos":{"pc1":[-2.815,-3.317,-2.759,-3.115,-2.961,-2.006,2.631,-3.317,-1.089,0.933,0.629,2.938,-0.301,0.055,-0.13,1.721,3.054,1.599,1.551,0.896,1.885,-0.998,1.599,-0.092,-1.148,-2.609,-2.01,0.745,-0.601,1.234,-1.305,-2.759,0.483,1.362,1.604,-0.952,1.005,-1.556,-1.654,-0.447,-1.145,-0.528,2.63,-1.344,1.823,2.08,0.146,1.034,-1.452,3.851,-2.557,3.146,0.442,1.701,-1.109,-0.333,3.287,-1.751,0.357,-0.538,1.125,0.985,-0.363,0.961,0.808,-1.145,-1.106,-2.257,-1.451,0.745,1.652,1.445,1.265,1.774,0.808,-2.061,-2.759,-0.343,-3.317,2.403,1.216,-0.074,2.29,1.877,4.297,-0.738,1.393,-2.214,0.007,-2.961,-1.627,-0.049,-2.759,-0.092,-3.317,2.492,-0.852,-3.163,1.919,0.09,0.398,-0.821,1.738,-0.815,1.79,-0.385,1.774,0.299,-2.355,0.968,2.038,1.976,0.453,-0.717,2.503,0.403,1.676,-1.751,0.557,4.542,-0.901,-0.845,0.867,-1.357,-1.054,-0.16,-2.407,-3.317,-2.811,0.264,2.931,1.617,-1.256,0.711,-1.549,0.201,-0.515,0.347,1.539,0.483,1.317,1.947,-1.647,-0.417,0.058,3.795,0.128,-0.828,2.631,-1.901,-2.759,-2.459,2.976,0.09,1.474,0.838,-0.935,-3.317,3.14,0.201,1.174,1.516,-2.013,1.418,-2.609,-1.109,2.681,2.834,-0.066,-0.209,2.188,-1.577,-1.546,-2.759,-1.354,-2.961,-2.051,-3.317,1.91,1.641,2.008,0.825,-0.304,1.809,1.139,-0.049,-1.762,4.029,0.639,-2.961,-1.259,1.424,-1.953,3.276,-3.317,0.877,-1.291,0.72,2.888,0.661,1.216,2.729,2.983,1.558,1.121,1.571,-2.609,0.933,-0.51,0.613,1.15,0.425,1.592,0.636,-0.87,-2.058,0.49,2.084,-0.203,0.195,-2.355,-1.803,1.969,-2.051,0.505,-1.664,-2.107,1.549,-1.762,-2.355,0.769,1.938,-1.308,-0.671,2.032,1.313,-1.162,0.355,1.027,0.092,2.882,1.32,-0.757,2.08,0.483,-0.374,2.739,1.265,-2.264,-3.317,1.02,-0.601,2.621,-0.9,-1.152,0.696,0.411,-3.115,0.082,-2.166,-0.483,-2.57,-0.128,-3.317,-2.509,0.069,0.036,-2.557,1.327,0.386,-2.253,-0.368,-0.252,-1.219,-1.099,-2.961,-1.053,-0.107,1.063,1.31,-2.57,-2.759,-1.546,-3.317,-2.253,0.317,-0.127,0.191,0.115,-0.154,2.184,1.578,1.695,0.972,-0.131,0.306,-1.165,-0.754,6.341,1.75,2.464,0.179,1.613,0.854,0.796,0.781,0.623,-0.189,0.898,-0.454,1.916,-2.961,0.103,0.225,-1.458,1.251,-3.317,-0.705,3.622,0.117,-2.661,0.538,-0.405,-0.058,-0.754,2.073,-0.705,-0.611,1.732,0.036,-2.173,-0.062,0.692,1.816,-2.153,-2.913,2.374,-0.027,2.592,-0.754,-1.51,2.976,3.636,2.924,-2.759,1.0,2.693,0.03,0.77,1.049,1.404,3.036,0.554,-0.197,0.843,0.302,0.622,2.266,1.505,-2.27,0.153,0.128,1.864,0.985,-1.151,-0.661,-1.151,-2.058,-3.317,0.585,-0.154,0.194,-1.522,-0.601,3.085,-2.368,-2.609,0.955,0.404,-0.503,2.381,-1.298,1.642,3.247,-0.008,-0.301,1.247,-3.115,-2.811,2.694,-0.626,-3.115,-2.214,-2.208,-3.317,-3.163,-2.609,-2.159,-2.961,-0.789,-1.445,-1.406,-1.856,-1.751,0.743,-2.11,0.41,-0.001,1.809,-0.405,0.794,-0.803,-1.351,-0.159,-3.115,3.248,-1.096,-0.712,-0.301,-1.354,-1.096,-0.803,-2.759,-0.196,0.55,-0.46,-2.306,-1.556,-0.65,1.418,-2.961,-3.317,-2.455,-0.893,-2.107,-3.317,-3.317,-2.961,0.739,-1.169,0.237,-2.766,-0.319,2.618,1.485,1.397,-0.894,1.014,1.013,1.436,2.722,0.09,0.558,-0.007,2.193,1.404,0.404,-2.051,1.052,-0.049,1.404,-2.225,0.609,-3.317,0.77,0.009,2.767,0.919,0.736,0.097,2.683,-0.57,2.066,0.79,3.488,-1.044,0.629,1.345,7.198,-3.163,2.259,2.648,-1.94,2.367,0.941,1.75,1.626,2.545,2.82,0.139,-1.005,-1.51,-0.399,3.127,1.834,-2.913,0.585,3.088,0.188,-0.203,-3.317,1.215,-1.751,2.813,-2.455,2.85,0.934,-2.264,-1.96,-0.552,0.344,0.929,2.265,0.948,0.699,0.683,0.194,-1.545,-0.643,2.607,2.826,-0.949,-1.347,-2.041,-2.253,1.473],"pc2":[0.138,0.275,0.149,0.223,0.201,-0.001,-0.852,0.275,-0.021,-0.235,-0.397,-0.964,-0.19,-0.264,-0.019,-0.404,-0.469,-0.586,-0.332,-0.215,-0.728,-0.028,-0.362,-0.269,-0.213,0.334,0.205,-0.357,-0.105,-0.441,0.084,0.149,-0.377,-0.334,-0.611,-0.238,3.96,0.098,0.131,-0.127,-0.033,-0.143,3.593,0.267,-0.602,-0.753,-0.229,-0.543,0.08,-0.709,0.097,3.402,-0.374,-0.602,0.059,-0.168,3.677,0.122,-0.127,-0.12,-0.55,-0.471,-0.175,-0.505,-0.415,-0.033,-0.215,0.012,0.037,-0.357,-0.64,-0.606,-0.477,-0.641,-0.415,-0.013,0.149,-0.145,0.275,3.884,-0.515,-0.251,-0.721,4.03,3.696,0.111,-0.37,0.077,-0.235,0.201,-0.152,-0.204,0.149,-0.269,0.275,-0.815,-0.091,0.253,-0.661,-0.24,-0.285,-0.085,-0.732,-0.111,-0.446,4.302,-0.641,-0.319,0.046,-0.532,-0.708,-0.692,-0.341,-0.145,-0.782,-0.379,-0.607,0.122,-0.402,-0.845,-0.019,-0.118,-0.224,-0.202,-0.04,-0.159,0.282,0.275,0.385,-0.343,-0.895,-0.665,0.012,-0.381,0.071,-0.285,-0.197,-0.391,-0.39,-0.377,-0.713,-0.743,0.104,-0.231,-0.084,-0.678,-0.303,-0.058,-0.852,-0.062,0.149,0.064,-0.692,-0.24,-0.555,-0.518,-0.044,0.275,3.496,-0.285,-0.378,-0.356,-0.042,3.667,0.334,0.017,-0.814,-0.903,-0.398,-0.197,-0.566,-0.114,0.318,0.149,0.046,0.201,0.208,0.275,-0.681,-0.631,-0.714,-0.465,0.084,-0.415,-0.082,-0.204,-0.098,-0.886,-0.177,0.201,-0.125,-0.593,0.174,-0.735,0.275,-0.701,0.03,-0.404,3.552,-0.008,-0.271,-0.843,-0.719,-0.359,-0.233,-0.546,0.334,-0.235,-0.069,-0.39,-0.503,-0.526,-0.669,-0.467,-0.055,0.235,-0.404,-0.505,-0.224,-0.301,0.046,-0.053,-0.665,0.208,-0.165,-0.09,0.197,3.778,-0.056,0.046,-0.232,-0.63,-0.164,-0.354,-0.681,-0.506,-0.269,-0.307,-0.517,-0.284,-0.411,-0.533,-0.263,-0.71,-0.334,-0.166,-0.622,-0.477,0.039,0.275,-0.447,-0.105,-0.618,-0.062,-0.006,-0.208,-0.296,0.223,-0.505,0.048,4.293,0.151,4.151,0.275,0.068,-0.318,-0.296,0.097,-0.602,-0.343,0.26,-0.192,-0.22,-0.008,-0.285,0.201,0.028,-0.053,-0.291,-0.098,0.151,0.149,0.318,0.275,0.26,-0.057,-0.427,-0.026,-0.005,-0.143,3.741,-0.573,-0.575,-0.418,-0.22,-0.388,0.048,-0.083,3.483,-0.674,-0.776,-0.085,-0.591,-0.17,-0.473,-0.376,-0.169,-0.168,-0.259,-0.168,-0.296,0.201,-0.294,-0.294,0.106,-0.289,0.275,-0.044,-1.03,-0.524,0.116,-0.433,-0.13,-0.057,-0.125,-0.683,-0.044,-0.326,-0.595,-0.296,0.074,-0.262,-0.455,-0.576,-0.006,0.172,-0.568,-0.238,3.885,-0.125,-0.112,-0.65,-1.058,-0.868,0.149,-0.276,3.577,-0.269,-0.366,-0.238,-0.379,-0.955,-0.085,-0.208,-0.391,-0.071,-0.371,-0.755,-0.779,0.066,-0.256,-0.059,-0.605,-0.471,-0.048,-0.134,0.062,0.235,0.275,-0.351,-0.143,-0.258,-0.17,-0.105,3.729,0.099,0.334,-0.478,-0.312,-0.139,-0.728,0.057,-0.297,3.616,-0.207,-0.19,-0.494,0.223,0.385,-0.867,-0.11,0.223,0.077,0.05,0.275,0.253,0.334,-0.022,0.201,-0.107,0.053,-0.172,0.183,0.122,-0.125,0.017,-0.406,-0.276,-0.415,-0.13,-0.429,-0.053,-0.229,-0.271,0.223,-0.786,0.005,-0.018,-0.19,0.046,0.005,-0.053,0.149,-0.251,-0.375,-0.074,0.496,0.098,-0.143,-0.566,0.201,0.275,0.311,-0.089,0.197,0.275,0.275,0.201,-0.373,-0.2,-0.193,0.176,-0.222,-0.756,-0.454,-0.31,-0.046,-0.463,4.225,-0.493,-0.816,-0.24,-0.444,-0.249,-0.396,-0.47,-0.269,0.208,-0.469,-0.204,-0.47,0.311,-0.317,0.275,-0.366,-0.055,-0.571,-0.048,-0.621,-0.267,-0.634,-0.141,-0.657,-0.447,3.424,0.181,-0.397,-0.528,3.259,0.253,-0.728,3.854,-0.013,-0.785,-0.382,-0.674,3.909,-0.305,3.796,-0.202,-0.001,-0.112,-0.157,-0.962,-0.569,0.172,-0.351,-0.669,-0.231,-0.182,0.275,-0.472,0.122,-0.823,0.311,-0.709,-0.355,0.039,0.201,-0.134,-0.116,-0.483,3.69,-0.451,-0.482,-0.342,-0.258,-0.136,-0.17,-0.522,-0.422,-0.1,0.019,4.419,0.26,4.091],"pc3":[0.272,0.443,0.343,0.376,0.41,0.304,0.82,0.443,-0.666,0.435,1.074,0.587,-0.684,-0.717,-1.442,0.417,-2.295,1.013,-1.374,-1.372,0.73,-0.574,-1.476,-0.88,0.1,-0.331,-0.405,-0.564,-0.58,-0.478,-0.341,0.343,1.079,-1.564,-0.902,0.162,1.485,-0.474,-0.437,-0.545,-0.737,1.248,1.347,-1.205,1.224,0.791,-0.49,0.805,-0.505,-0.79,0.276,0.919,1.052,-0.804,-0.28,1.309,-1.339,-0.535,-1.524,-0.637,0.897,1.042,-0.627,-1.023,-0.755,-0.737,0.127,0.172,-0.639,-0.564,-1.004,0.844,1.324,1.024,-0.755,0.233,0.343,-0.576,0.443,0.73,1.124,1.179,1.032,-1.029,-0.068,-1.407,0.237,0.5,-0.614,0.41,1.9,-0.551,0.343,-0.88,0.443,0.83,-0.713,0.478,1.019,-0.561,-0.492,1.223,0.566,1.095,0.231,-0.075,1.024,-0.757,0.208,-1.151,0.899,0.956,-0.723,1.058,-0.945,-0.923,1.06,-0.535,-0.888,-0.771,-0.476,-0.841,-1.522,-0.006,-0.645,-0.392,-0.399,0.443,-0.264,-0.913,0.85,-1.159,-0.578,-0.719,-0.602,-0.721,0.991,-0.994,0.233,1.079,1.931,0.673,-0.566,0.954,-1.554,-0.727,1.111,1.352,0.82,0.139,0.343,0.239,0.207,-0.561,1.128,0.744,-0.631,0.443,1.349,-0.721,-1.889,-1.529,0.131,0.279,-0.331,-0.414,1.02,0.752,0.241,-0.592,0.091,2.1,-1.138,0.343,-0.541,0.41,-0.431,0.443,-1.0,0.905,-1.037,1.001,-1.091,-1.505,-0.302,-0.551,0.129,0.199,0.41,0.41,0.394,0.928,-0.468,0.237,0.443,1.608,-0.599,1.167,1.351,-2.297,-1.425,0.918,0.078,-1.503,0.625,1.226,-0.331,0.435,-0.353,-0.817,-0.833,1.979,0.705,0.811,1.325,-0.302,0.95,0.256,-0.72,-0.727,0.208,0.237,1.085,-0.431,-1.495,0.227,-0.502,1.206,0.263,0.208,-1.619,-0.716,0.194,1.793,1.028,1.222,-0.079,-0.686,0.934,1.091,-0.292,1.093,0.223,0.926,1.213,1.283,0.254,1.324,0.3,0.443,1.197,-0.58,0.24,-0.61,-0.609,0.347,-0.615,0.376,1.755,0.398,-0.173,0.533,-0.508,0.443,0.173,-0.974,1.019,0.276,0.83,1.115,-0.364,1.154,-0.786,1.229,-0.136,0.41,-0.343,0.32,-1.595,-2.171,0.533,0.343,-1.138,0.443,-0.364,-1.248,1.951,-1.133,-1.181,-0.386,1.59,1.097,-0.675,1.299,1.242,-1.02,-0.351,-0.615,-2.846,-1.041,1.042,0.474,1.118,-1.264,0.852,-0.543,-1.481,-0.541,0.28,-0.719,-2.508,0.41,-0.819,1.209,-0.376,-1.405,0.443,-0.415,0.869,1.775,0.306,0.848,-0.519,0.386,-0.749,1.054,-0.415,0.084,1.132,1.019,0.527,1.056,0.883,1.353,0.141,0.308,-1.733,1.211,0.92,-0.749,0.262,0.341,0.779,0.979,0.343,-1.537,1.29,1.148,1.367,-1.337,-1.672,0.685,-1.16,-0.715,-0.6,-1.293,1.203,-1.033,1.818,0.429,-0.619,-1.438,1.25,1.042,-0.743,1.129,-0.306,-0.302,0.443,-0.604,-0.386,-0.592,1.869,-0.58,-1.271,0.466,-0.331,-0.894,-0.62,-0.617,1.124,-0.47,-1.148,0.347,-0.525,-0.684,-0.735,0.376,-0.264,0.763,1.284,0.376,0.5,0.372,0.443,0.478,-0.331,0.135,0.41,-0.77,-0.633,0.096,-0.37,-0.535,-1.105,0.335,-1.051,-0.788,-1.505,-0.519,-0.8,-0.513,-0.135,0.958,0.376,-0.046,-0.537,-0.286,-0.684,-0.541,-0.537,-0.513,0.343,-0.849,-0.759,-0.288,-0.97,-0.474,-0.78,1.056,0.41,0.443,-0.296,-0.739,-0.502,0.443,0.443,0.41,-0.569,0.184,-0.264,0.472,1.052,1.212,-0.345,-1.409,-0.605,1.191,-0.831,-0.545,1.046,-0.561,-1.022,-0.659,-1.119,1.448,-0.486,-0.431,-0.796,-0.551,1.448,-0.08,1.46,0.443,1.367,-1.452,0.537,-2.293,-0.034,-0.69,0.182,1.221,1.183,0.98,1.278,-1.309,1.074,-0.771,0.745,0.478,-0.904,0.857,2.261,0.945,-0.502,-1.041,1.824,-1.995,-1.146,-0.361,-0.445,0.262,-0.647,0.777,-0.551,0.308,-0.604,0.35,-0.464,-0.586,0.443,1.258,-0.535,1.138,-0.296,-0.04,-0.374,0.3,-0.339,-0.682,-1.401,0.97,-0.505,-0.765,0.754,-0.506,-0.592,0.106,-0.909,0.631,-0.363,-0.81,-0.67,0.677,-0.364,-1.028],"segmento":["Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Digitales financieros","Huella básica: redes y familia","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Huella básica: redes y familia","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Hogar conectado (IoT)","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Hogar conectado (IoT)","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Huella básica: redes y familia","Hogar conectado (IoT)","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Huella básica: redes y familia","Hogar conectado (IoT)","Huella básica: redes y familia","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Huella básica: redes y familia","Digitales financieros","Huella básica: redes y familia","Hogar conectado (IoT)","Digitales financieros","Digitales financieros","Digitales financieros","Hogar conectado (IoT)","Hogar conectado (IoT)","Huella básica: redes y familia","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Huella básica: redes y familia","Huella básica: redes y familia","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Huella básica: redes y familia","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Hogar conectado (IoT)","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Huella básica: redes y familia","Digitales financieros","Huella básica: redes y familia","Huella básica: redes y familia","Digitales financieros","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Huella básica: redes y familia","Hogar conectado (IoT)","Digitales financieros","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Hogar conectado (IoT)","Huella básica: redes y familia","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Huella básica: redes y familia","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Hogar conectado (IoT)","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Huella básica: redes y familia","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Huella básica: redes y familia","Huella básica: redes y familia","Hogar conectado (IoT)","Huella básica: redes y familia","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Huella básica: redes y familia","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Huella básica: redes y familia","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Huella básica: redes y familia","Hogar conectado (IoT)","Huella básica: redes y familia","Hogar conectado (IoT)","Huella básica: redes y familia","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Huella básica: redes y familia","Digitales financieros","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Hogar conectado (IoT)","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Huella básica: redes y familia","Hogar conectado (IoT)","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Huella básica: redes y familia","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Huella básica: redes y familia","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Hogar conectado (IoT)","Huella básica: redes y familia","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Hogar conectado (IoT)","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Huella básica: redes y familia","Hogar conectado (IoT)","Huella básica: redes y familia","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Hogar conectado (IoT)","Digitales financieros","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Huella básica: redes y familia","Digitales financieros","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Huella básica: redes y familia","Huella básica: redes y familia","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Huella básica: redes y familia","Huella básica: redes y familia","Digitales financieros","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Digitales financieros","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Huella básica: redes y familia","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Hogar conectado (IoT)","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Hogar conectado (IoT)","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Hogar conectado (IoT)","Huella básica: redes y familia","Digitales financieros","Hogar conectado (IoT)","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Digitales financieros","Hogar conectado (IoT)","Digitales financieros","Hogar conectado (IoT)","Digitales financieros","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Hogar conectado (IoT)","Digitales financieros","Digitales financieros","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Huella básica: redes y familia","Digitales financieros","Digitales financieros","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Huella básica: redes y familia","Hogar conectado (IoT)"],"VAL_CFM":[34000.0,0.0,0.0,0.0,0.0,60990.0,29027.0,50160.0,69547.0,42701.0,42701.0,42701.0,42701.0,42701.0,42701.0,42701.0,42701.0,42701.0,42701.0,42701.0,42701.0,42701.0,42701.0,42701.0,38339.0,38339.0,38339.0,38339.0,38339.0,38339.0,38339.0,38339.0,38339.0,38339.0,38339.0,38339.0,38339.0,38339.0,38339.0,38339.0,38339.0,38339.0,38339.0,30872.0,30872.0,30872.0,30872.0,30872.0,34396.0,42701.0,42701.0,42701.0,52097.0,33339.0,26007.0,33339.0,33339.0,33339.0,0.0,0.0,57215.0,51426.0,46243.0,47377.0,36913.0,36913.0,36913.0,36913.0,36913.0,36913.0,36913.0,51049.0,51049.0,51049.0,51049.0,51049.0,51049.0,51049.0,58683.0,58683.0,36829.0,36829.0,36829.0,36829.0,36829.0,36829.0,36829.0,34396.0,97392.0,11501.0,18000.0,36000.0,16000.0,11386.0,1094.0,62919.0,69757.0,41862.0,53775.0,42701.0,42701.0,42701.0,42701.0,42701.0,42701.0,42701.0,42701.0,42701.0,42701.0,42701.0,42701.0,42701.0,42701.0,42701.0,42701.0,42701.0,42701.0,38339.0,38339.0,38339.0,38339.0,38339.0,38339.0,38339.0,38339.0,38339.0,38339.0,38339.0,38339.0,38339.0,38339.0,38339.0,38339.0,38339.0,38339.0,38339.0,30872.0,34396.0,42701.0,42701.0,42701.0,52097.0,17192.0,46708.0,35990.0,92099.0,68918.0,60990.0,46243.0,36913.0,36913.0,36913.0,51049.0,51049.0,58683.0,58683.0,36829.0,36829.0,36829.0,36829.0,36829.0,36829.0,36829.0,36829.0,36829.0,36829.0,36829.0,36829.0,55369.0,48784.0,43779.0,5000.0,8524.0,18859.0,0.0,0.0,26259.0,5000.0,42701.0,42701.0,42701.0,42701.0,42701.0,42701.0,42701.0,42701.0,42701.0,42701.0,42701.0,42701.0,36577.0,38339.0,38339.0,38339.0,38339.0,38339.0,38339.0,30872.0,42701.0,42701.0,42701.0,42701.0,42701.0,56795.0,51930.0,77852.0,32634.0,64021.0,33641.0,33641.0,33641.0,39430.0,45386.0,31418.0,31418.0,29161.0,36913.0,36913.0,36913.0,36913.0,36913.0,36913.0,36829.0,36829.0,36829.0,36829.0,36829.0,36829.0,36829.0,36829.0,36829.0,34396.0,38340.0,31879.0,31879.0,31879.0,31879.0,31879.0,31879.0,31879.0,31879.0,36577.0,36577.0,36577.0,36577.0,36577.0,36577.0,36577.0,36577.0,36577.0,36577.0,36577.0,20221.0,31418.0,31418.0,31418.0,31418.0,31418.0,30369.0,30369.0,28062.0,33347.0,27685.0,27685.0,27685.0,27685.0,27685.0,27685.0,27685.0,27685.0,27685.0,27685.0,27685.0,27685.0,27685.0,27685.0,27685.0,27685.0,27685.0,27685.0,27685.0,0.0,33000.0,0.0,0.0,51930.0,57351.0,39369.0,39289.0,39289.0,39289.0,29950.0,29950.0,29950.0,33641.0,33641.0,33641.0,33641.0,45386.0,45386.0,45386.0,45386.0,45386.0,33347.0,33347.0,33347.0,31418.0,31418.0,29161.0,33339.0,40185.0,40185.0,40185.0,40185.0,40185.0,32215.0,0.0,34454.0,31879.0,31879.0,31879.0,31879.0,31879.0,31879.0,31879.0,31879.0,31879.0,31879.0,31879.0,36577.0,36577.0,36577.0,36577.0,36577.0,36577.0,36577.0,36577.0,36577.0,36577.0,36577.0,36577.0,36577.0,36577.0,41527.0,67030.0,67030.0,67030.0,34396.0,41946.0,20221.0,20221.0,20221.0,31418.0,31418.0,31418.0,31418.0,31418.0,31418.0,31418.0,31418.0,31418.0,69128.0,30369.0,30369.0,30369.0,30369.0,30369.0,30369.0,30369.0,30369.0,30369.0,28062.0,28062.0,28062.0,28062.0,28062.0,28062.0,28062.0,33347.0,33347.0,33347.0,33347.0,32374.0,32503.0,32503.0,27685.0,27685.0,12501.0,26976.0,43047.0,35000.0,11047.0,33000.0,45000.0,1172.0,0.0,5000.0,17192.0,51930.0,36829.0,50252.0,29950.0,29950.0,33641.0,39430.0,36913.0,45386.0,36116.0,31418.0,31418.0,31418.0,33339.0,33339.0,40185.0,40185.0,40185.0,40185.0,40185.0,40185.0,40185.0,40185.0,40185.0,36955.0,36955.0,32215.0,32215.0,32215.0,32215.0,36000.0,35000.0,7678.0,0.0,0.0,32501.0,17000.0,10501.0,32998.0,349.0,38000.0,31000.0,33000.0,23560.0,17192.0,51930.0,51930.0,51930.0,51930.0,51930.0,51930.0,51930.0,51930.0,51930.0,77852.0,69757.0,32634.0,39369.0,39289.0,39289.0,29950.0,29950.0,29950.0,29950.0,29950.0,29950.0,29950.0,29950.0,33641.0,33641.0,33641.0,33641.0,33641.0,33641.0,39430.0,36913.0,52097.0,45386.0,45386.0,45386.0,45386.0,45386.0,45386.0,45386.0,16359.0,16359.0,27265.0,47567.0,36116.0,31418.0,31418.0,31418.0,31418.0,31418.0,46057.0,67467.0,52676.0,33339.0,33339.0,33339.0,33339.0,40185.0,40185.0,40185.0,40185.0,40185.0,40185.0,40185.0,40185.0,40185.0,40185.0,40185.0,40185.0,40185.0,40185.0,40185.0,40185.0,40185.0,40185.0,40185.0,40185.0,40185.0,40185.0,40185.0,40185.0,40185.0,40185.0,40185.0],"ANTIGUEDAD_MESES":[132.0,131.0,134.0,159.0,183.0,247.0,2.0,244.0,221.0,8.0,9.0,6.0,4.0,7.0,2.0,7.0,3.0,6.0,7.0,8.0,4.0,8.0,4.0,8.0,28.0,25.0,24.0,26.0,28.0,27.0,47.0,24.0,36.0,26.0,145.0,48.0,26.0,26.0,47.0,28.0,36.0,24.0,24.0,29.0,38.0,40.0,38.0,40.0,2.0,21.0,30.0,23.0,6.0,10.0,6.0,7.0,7.0,4.0,11.0,20.0,128.0,128.0,34.0,49.0,2.0,1.0,0.0,1.0,1.0,1.0,1.0,175.0,66.0,85.0,98.0,100.0,206.0,75.0,280.0,88.0,78.0,42.0,30.0,62.0,24.0,245.0,31.0,7.0,208.0,128.0,130.0,171.0,130.0,190.0,163.0,8.0,101.0,1.0,13.0,11.0,6.0,5.0,3.0,9.0,10.0,4.0,35.0,6.0,8.0,6.0,5.0,9.0,2.0,4.0,9.0,4.0,6.0,48.0,28.0,36.0,25.0,47.0,107.0,48.0,48.0,83.0,28.0,36.0,26.0,49.0,27.0,44.0,33.0,37.0,25.0,28.0,39.0,63.0,74.0,117.0,121.0,11.0,20.0,238.0,3.0,59.0,171.0,170.0,153.0,1.0,2.0,1.0,111.0,76.0,90.0,null,4.0,234.0,10.0,3.0,45.0,40.0,5.0,8.0,39.0,10.0,65.0,30.0,160.0,37.0,240.0,135.0,144.0,128.0,131.0,157.0,158.0,139.0,6.0,8.0,4.0,7.0,14.0,4.0,7.0,4.0,8.0,10.0,7.0,22.0,35.0,37.0,30.0,27.0,30.0,37.0,29.0,40.0,15.0,11.0,5.0,47.0,2.0,181.0,181.0,null,18.0,127.0,27.0,29.0,30.0,296.0,4.0,26.0,36.0,7.0,1.0,1.0,1.0,2.0,1.0,3.0,35.0,258.0,2.0,52.0,4.0,7.0,2.0,4.0,8.0,9.0,84.0,1.0,4.0,2.0,1.0,2.0,3.0,3.0,2.0,64.0,31.0,129.0,34.0,172.0,43.0,31.0,43.0,33.0,35.0,174.0,6.0,13.0,108.0,13.0,277.0,170.0,38.0,37.0,14.0,180.0,8.0,8.0,7.0,1.0,2.0,1.0,14.0,3.0,1.0,1.0,2.0,2.0,1.0,1.0,2.0,1.0,2.0,9.0,2.0,172.0,157.0,172.0,159.0,62.0,255.0,30.0,87.0,163.0,161.0,92.0,187.0,67.0,30.0,28.0,28.0,29.0,9.0,134.0,2.0,2.0,14.0,14.0,49.0,62.0,27.0,122.0,18.0,7.0,2.0,1.0,1.0,1.0,1.0,96.0,13.0,18.0,3.0,3.0,1.0,3.0,3.0,3.0,4.0,13.0,2.0,2.0,3.0,35.0,251.0,125.0,261.0,32.0,56.0,34.0,81.0,34.0,47.0,32.0,211.0,268.0,33.0,59.0,226.0,53.0,278.0,3.0,6.0,16.0,1.0,4.0,49.0,15.0,14.0,98.0,13.0,14.0,37.0,61.0,36.0,61.0,37.0,38.0,37.0,37.0,37.0,145.0,37.0,50.0,38.0,15.0,14.0,15.0,15.0,15.0,14.0,15.0,97.0,37.0,61.0,51.0,37.0,11.0,9.0,6.0,3.0,186.0,232.0,205.0,152.0,132.0,185.0,217.0,234.0,237.0,170.0,1.0,50.0,3.0,3.0,28.0,83.0,30.0,129.0,42.0,4.0,14.0,50.0,50.0,28.0,8.0,8.0,1.0,1.0,2.0,2.0,1.0,1.0,1.0,2.0,1.0,24.0,193.0,12.0,11.0,38.0,59.0,136.0,149.0,129.0,132.0,234.0,133.0,175.0,189.0,135.0,149.0,174.0,148.0,174.0,167.0,6.0,52.0,124.0,99.0,89.0,169.0,53.0,65.0,89.0,62.0,191.0,106.0,10.0,272.0,91.0,67.0,94.0,67.0,32.0,33.0,224.0,42.0,127.0,32.0,30.0,30.0,30.0,32.0,32.0,30.0,82.0,83.0,10.0,5.0,6.0,17.0,9.0,6.0,4.0,14.0,3.0,40.0,11.0,28.0,15.0,29.0,29.0,28.0,28.0,77.0,269.0,1.0,41.0,11.0,10.0,9.0,10.0,2.0,0.0,3.0,1.0,1.0,1.0,2.0,2.0,2.0,1.0,2.0,1.0,1.0,2.0,1.0,3.0,3.0,1.0,1.0,1.0,3.0,3.0,2.0,3.0,0.0,0.0,1.0],"BAN_SUPRESION_I":[false,false,false,false,true,false,false,false,false,true,false,true,true,false,true,false,true,false,false,true,false,true,false,true,false,false,true,false,true,true,true,false,false,false,true,false,false,true,true,false,true,true,true,false,false,true,false,false,true,false,true,false,true,false,true,false,false,false,true,false,false,false,false,false,true,true,true,true,true,true,true,false,false,false,false,true,false,false,false,false,false,true,true,true,true,false,false,false,true,false,true,false,false,true,false,false,false,true,true,true,false,true,false,true,false,false,false,true,true,true,false,true,true,true,true,false,true,false,false,true,true,false,false,true,true,true,false,true,true,false,false,true,true,false,true,false,false,false,true,true,true,true,true,false,true,false,true,false,false,true,true,true,false,false,true,true,true,true,true,true,true,true,false,false,false,true,true,false,true,true,true,false,true,false,false,false,false,false,false,false,true,false,true,false,true,true,true,true,true,true,false,true,false,false,false,true,false,false,false,false,true,true,true,false,false,false,false,false,false,false,false,false,true,true,false,false,true,true,true,false,true,true,false,false,false,false,true,true,false,false,false,false,true,true,false,true,true,false,true,true,true,false,true,false,false,false,false,true,false,true,true,true,true,false,false,false,false,false,false,false,false,false,true,true,true,true,true,true,true,false,true,false,false,true,true,true,true,true,false,false,true,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,true,false,true,false,false,false,false,false,false,false,false,true,false,false,false,true,true,true,true,true,true,false,false,false,true,true,false,false,false,true,true,false,true,false,false,false,true,false,true,false,false,false,true,true,false,true,true,true,false,false,false,false,true,true,true,false,false,false,false,true,false,true,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,true,true,true,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,false,true,true,false,true,true,false,false,true,false,false,true,false,false,true,true,true,true,true,false,false,false,true,false,false,false,false,false,false,false,false,false,false,true,true,false,false,false,false,true,true,false,false,false,false,false,false,false,false,true,false,true,false,false,true,false,false,false,false,false,true,false,false,true,true,false,false,false,false,true,false,false,false,true,false,true,true,false,false,false,true,false,true,false,false,false,true,false,false,false,false,false,false,false,false,false,false,true,false,true,true,true,false,false,false,true,true,true,true,false,true,true,false,true,true,true,false,true,false,false,true,true,false]},"modelo":{"n":3162,"positivos":366,"tasa":0.1157495256166983,"auc":0.9877127356019919,"auc_pliegues":[0.9852535899047526,0.9883561643835617,0.9920724385522092,0.9892420418065527,0.9766584164481584],"ap":0.8818844310325603,"auc_gb":0.9897599615375596,"deciles":[{"decil":1,"registros":317,"positivos":271,"tasa":0.8548895899053628,"lift":7.385685473444691,"captura":0.7404371584699454},{"decil":2,"registros":316,"positivos":94,"tasa":0.2974683544303797,"lift":2.5699315210624607,"captura":0.9972677595628415},{"decil":3,"registros":316,"positivos":1,"tasa":0.0031645569620253164,"lift":0.027339697032579373,"captura":1.0},{"decil":4,"registros":316,"positivos":0,"tasa":0.0,"lift":0.0,"captura":1.0},{"decil":5,"registros":316,"positivos":0,"tasa":0.0,"lift":0.0,"captura":1.0},{"decil":6,"registros":316,"positivos":0,"tasa":0.0,"lift":0.0,"captura":1.0},{"decil":7,"registros":316,"positivos":0,"tasa":0.0,"lift":0.0,"captura":1.0},{"decil":8,"registros":316,"positivos":0,"tasa":0.0,"lift":0.0,"captura":1.0},{"decil":9,"registros":316,"positivos":0,"tasa":0.0,"lift":0.0,"captura":1.0},{"decil":10,"registros":317,"positivos":0,"tasa":0.0,"lift":0.0,"captura":1.0}],"importancia":[{"variable":"BAN_FAMILIA","importancia":0.9234211031404048},{"variable":"BAN_HOGAR","importancia":0.04171878204763518},{"variable":"ANTIGUEDAD_MESES","importancia":0.018251267865881077},{"variable":"BAN_COMIDAYBEBIDA","importancia":0.010593429491138591},{"variable":"BAN_REDES_SOCIALES","importancia":0.006015417454940366}],"reglas":[{"regla":"con familia y con hogar y con comida y bebida","registros":120,"p_afinidad":0.9833333333333333,"positivos":118,"lift":8.495355191256829},{"regla":"con familia y con hogar y sin comida y bebida","registros":195,"p_afinidad":0.7948717948717948,"positivos":155,"lift":6.867171080285834},{"regla":"con familia y sin hogar y antigüedad (meses) ≤ 104","registros":123,"p_afinidad":0.6341463414634146,"positivos":78,"lift":5.478608556577369},{"regla":"con familia y sin hogar y antigüedad (meses) > 104","registros":30,"p_afinidad":0.2,"positivos":6,"lift":1.7278688524590164},{"regla":"sin familia y con redes sociales","registros":53,"p_afinidad":0.16981132075471697,"positivos":9,"lift":1.4670584596350138},{"regla":"sin familia y sin redes sociales","registros":2641,"p_afinidad":0.0,"positivos":0,"lift":0.0}],"variables":40,"prueba":{"n_entrenamiento":2213,"n_prueba":949,"positivos_prueba":110,"exactitud":0.9704952581664911,"precision":0.8203125,"sensibilidad":0.9545454545454546,"f1":0.8823529411764706,"auc_prueba":0.990594864015603,"exactitud_ingenuo":0.8840885142255005,"matriz":{"vn":816,"fp":23,"fn":5,"vp":105}}},"hip_regla":"con familia y con hogar y con comida y bebida","hipergeometrica":{"Al azar entre todos":{"N":3162,"K":366,"m":20,"esperado":2.314990512333966,"P_al_menos_5":0.07239780531729678,"P_al_menos_10":2.427688671856302e-05,"dist":[0.08473736895298076,0.22336245615261766,0.2788010499313181,0.21910812992083434,0.1215931897249522,0.05064852606162699,0.016430731405685964,0.004250853974881027,0.000890747822412435,0.00015266916597182602,2.151944776638051e-05,2.498914898663098e-06,2.3864278757856895e-07,1.864016257336534e-08,1.1792074172756215e-09,5.948850030541291e-11,2.337086274086668e-12,6.891010685792919e-14,1.4345995760807248e-15,1.880202061862696e-17,1.1667205212202354e-19]},"Al azar en la mejor regla":{"N":120,"K":118,"m":20,"esperado":19.666666666666668,"P_al_menos_5":1.0,"P_al_menos_10":1.0,"dist":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.026610644257703087,0.2801120448179272,0.6932773109243698]}},"alineacion":[{"pregunta":"5.3.1 · ¿Cómo se distribuye la antigüedad y qué grupos orientan la fidelización?","hallazgo":"Las líneas de 0–3 meses casi no tienen huella digital (5% en meses medidos) frente a 70% en las de más de 120 meses: la permanencia trae información para personalizar."},{"pregunta":"5.3.3–5.3.5 · ¿Qué proporción tiene banca, billetera y pagos en línea?","hallazgo":"Las proporciones de toda la muestra están subestimadas: las banderas no se calcularon en julio, agosto y octubre. En los meses medidos, banca digital sube de 6.5% a 10.8%."},{"pregunta":"5.3.6 · ¿Cómo condiciona la restricción de contacto una selección?","hallazgo":"La restricción y la falta de huella van juntas: entre contactables casi la mitad tiene huella; entre restringidos, 5 %. Una campaña digital debe partir de los contactables."},{"pregunta":"5.7.3 · ¿Qué grupos tienen mayor variación relativa del cargo fijo?","hallazgo":"El segmento con mayor CV del cargo fijo es Huella básica: redes y familia (41.4 %); el de menor, Sin huella digital (13.4 %)."},{"pregunta":"5.10.5 · ¿Qué probabilidad hay de seleccionar registros con una preferencia digital?","hallazgo":"Escogiendo 20 registros al azar, P(≥5 con afinidad financiera) = 7.2%; escogiéndolos dentro de la regla «con familia y con hogar y con comida y bebida», 100.0%."}]}}</script>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<script>
+(() => {
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const C = { ink: css('--ink'), ink2: css('--ink-2'), rule: css('--rule'), scene: css('--scene'), navy: css('--navy'), coral: css('--coral'),
+              pink: css('--pink'), aqua: css('--s3'), gray: css('--s4'), sky: css('--sky') };
+  const nf = (v, d = 0) => v == null || Number.isNaN(v) ? '—' : Number(v).toLocaleString('es-CO', { minimumFractionDigits: d, maximumFractionDigits: d });
+  const pc = (v, d = 1) => v == null ? '—' : `${nf(100 * v, d)} %`;
+  const $ = id => document.getElementById(id);
+  const cfg = { displaylogo: false, responsive: true, modeBarButtonsToRemove: ['toImage', 'sendDataToCloud', 'select2d', 'lasso2d'] };
+  const font = { family: 'Outfit, Segoe UI, system-ui, sans-serif', color: C.ink2, size: 12 };
+  const hoverlabel = { bgcolor: '#263366', bordercolor: '#263366', font: { color: '#fff', family: 'Outfit, sans-serif' } };
+  const L2 = (extra = {}) => Object.assign({ paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', font, hoverlabel,
+    separators: ',.', margin: { l: 52, r: 14, t: 10, b: 42 }, xaxis: { gridcolor: C.rule, zeroline: false, linecolor: C.rule }, yaxis: { gridcolor: C.rule, zeroline: false },
+    showlegend: false }, extra);
+  const ax3 = (t, extra = {}) => Object.assign({ title: { text: t, font: { size: 12, color: C.ink2 } }, gridcolor: '#dbe3ec', zerolinecolor: '#dbe3ec',
+    showbackground: true, backgroundcolor: C.scene, tickfont: { size: 11, color: C.ink2 } }, extra);
+  const SEQ = [[0, '#cde2fb'], [0.35, '#6da7ec'], [0.7, '#2a78d6'], [1, '#263366']];
+  let D;
+
+  // ---------- animaciones y navegación ----------
+  if (!reduce) document.documentElement.classList.add('anim');
+  document.querySelectorAll('.split').forEach(el => {
+    el.setAttribute('aria-label', el.textContent.trim());
+    el.innerHTML = el.textContent.trim().split(/\s+/).map((w, i) => `<span class="w" aria-hidden="true"><span style="--i:${i}">${w}</span></span>`).join(' ');
+  });
+  const bandas = [...document.querySelectorAll('.band')];
+  const io = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) e.target.classList.add('in'); }), { threshold: 0.08 }) : null;
+  const pager = [...document.querySelectorAll('#pager a')];
+  const activo = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => {
+    if (e.isIntersecting) pager.forEach(a => a.classList.toggle('activo', a.getAttribute('href') === '#' + e.target.id));
+  }), { rootMargin: '-45% 0px -50% 0px' }) : null;
+  bandas.forEach(b => { io ? io.observe(b) : b.classList.add('in'); activo && activo.observe(b); });
+  setTimeout(() => bandas.forEach(b => b.classList.add('in')), 9000);
+  // paginador: visible mientras se desplaza; al llegar a una sección se desvanece (el hover lo muestra)
+  const pagerEl = $('pager'); let ocultar;
+  const mostrarPager = () => { pagerEl.classList.add('ver'); clearTimeout(ocultar); ocultar = setTimeout(() => pagerEl.classList.remove('ver'), 700); };
+  addEventListener('scroll', mostrarPager, { passive: true });
+  const marcas = [...document.querySelectorAll('.watermark')];
+  let pend = false;
+  const parallax = () => { pend = false; marcas.forEach(m => { const r = m.parentElement.getBoundingClientRect(); m.style.setProperty('--par', `${(r.top + r.height / 2 - innerHeight / 2) * -0.18}px`); }); };
+  if (!reduce) addEventListener('scroll', () => { if (!pend) { pend = true; requestAnimationFrame(parallax); } }, { passive: true });
+  const cortina = document.querySelector('.cortina');
+  const ir = id => {
+    const destino = $(id); if (!destino) return;
+    if (reduce) { destino.scrollIntoView(); return; }
+    cortina.className = 'cortina reset'; void cortina.offsetWidth; cortina.className = 'cortina cubre';
+    setTimeout(() => { destino.scrollIntoView({ behavior: 'instant', block: 'start' }); parallax(); cortina.className = 'cortina sale'; }, 620);
+    setTimeout(() => { cortina.className = 'cortina reset'; }, 1300);
+  };
+  document.querySelectorAll('a[href^="#"]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); ir(a.getAttribute('href').slice(1)); }));
+  const actual = () => { const y = innerHeight * 0.4; let i = 0; bandas.forEach((b, k) => { if (b.getBoundingClientRect().top <= y) i = k; }); return i; };
+  $('subir').addEventListener('click', () => ir(bandas[Math.max(0, actual() - 1)].id));
+  $('bajar').addEventListener('click', () => ir(bandas[Math.min(bandas.length - 1, actual() + 1)].id));
+
+  // ---------- datos ----------
+  const emb = $('datos');
+  const cargar = emb && emb.textContent.trim().startsWith('{') ? Promise.resolve(JSON.parse(emb.textContent))
+    : fetch('data/dashboard_data.json').then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
+  const fuentes = document.fonts && document.fonts.ready ? Promise.race([document.fonts.ready, new Promise(r => setTimeout(r, 1500))]) : Promise.resolve();
+  Promise.all([cargar, fuentes]).then(([d]) => { D = d; init(); })
+    .catch(e => { console.error(e); $('error').style.display = 'block'; })
+    .finally(() => setTimeout(() => document.body.classList.add('listo'), reduce ? 0 : 350));
+
+  const qa = (pregunta, respuesta, utilidad) => `<p><b>Pregunta</b>${pregunta}</p><p class="r">${respuesta}</p><p class="u"><b>Utilidad para el marketing</b>${utilidad}</p>`;
+
+  function init() {
+    renderInicio(); renderPoblacion(); setupAgrupados(); renderAntiguedad(); renderRegresion(); renderProporciones();
+    renderConteo(); setupHiper(); renderValidacion(); renderCiencia();
+  }
+
+  // ---------- INICIO ----------
+  function renderInicio() {
+    const p = D.preparacion, d = D.descriptiva, r = D.regresion;
+    $('kpis').innerHTML = [
+      [nf(p.recibidos), 'Registros recibidos', '1.000 por mes, 9 meses'],
+      [nf(d.n), 'Población de estudio', 'personas naturales, edad válida'],
+      ['6', 'Variables', '2 cuantitativas, 4 nominales'],
+      [`$${nf(d.exactas.media)}`, 'Cargo fijo promedio', `mediana $${nf(d.exactas.mediana)}`],
+      [nf(r.r, 2), 'Correlación de Pearson', 'antigüedad vs. cargo fijo'],
+      [pc(d.proporciones.BAN_BANCA.p), 'Banca digital activa', `${pc(D.ciencia.prop_medidos.BAN_BANCA)} en meses medidos`],
+    ].map(([v, l, n]) => `<div class="kpi"><span class="v">${v}</span><span class="l">${l}</span><span class="n">${n}</span></div>`).join('');
+    $('pie').textContent = `Datos reales anonimizados de ${D.meta.empresa} · ${D.meta.periodo} · unidad: ${D.meta.unidad}. Solo se muestran resultados agregados; ningún registro individual es identificable.`;
+  }
+
+  // ---------- POBLACIÓN ----------
+  function renderPoblacion() {
+    const p = D.preparacion, emb = p.embudo;
+    Plotly.react('p-embudo', [{ type: 'funnel', y: emb.map(e => e.paso.replace(/ (actualizados|con|\()/, '<br>$1')), x: emb.map(e => e.registros), textinfo: 'value+percent initial',
+      marker: { color: [C.sky, C.sky, C.navy, C.coral] }, connector: { fillcolor: '#e9eef6', line: { color: C.rule } }, textfont: { family: 'Outfit, sans-serif', size: 14 }, texttemplate: '%{value:,}<br>%{percentInitial:.0%}',
+      hovertemplate: '%{y}<br>%{x:,} registros<extra></extra>' }],
+      L2({ margin: { l: 190, r: 20, t: 10, b: 20 }, yaxis: { tickfont: { size: 12, color: C.ink } } }), cfg);
+    const e = p.estratos;
+    Plotly.react('p-estratos', [
+      { type: 'bar', name: 'Recibidos', x: e.map(r => r.nombre.slice(0, 3)), y: e.map(r => r.recibidos), marker: { color: '#c9d1e3' }, hovertemplate: '%{x}: %{y:,} recibidos<extra></extra>' },
+      { type: 'bar', name: 'Elegibles', x: e.map(r => r.nombre.slice(0, 3)), y: e.map(r => r.elegibles), marker: { color: C.navy }, hovertemplate: '%{x}: %{y:,} elegibles<extra></extra>' }],
+      L2({ barmode: 'overlay', bargap: 0.3, showlegend: true, legend: { orientation: 'h', y: 1.1, font: { color: C.ink } },
+        annotations: [{ x: 'Sep', y: 60, text: 'sin datos', showarrow: false, font: { color: C.coral, size: 12 } }] }), cfg);
+    const d = D.descriptiva;
+    const conceptos = [
+      ['Población', 'Registros elegibles de líneas de personas naturales, actualizados entre enero y octubre de 2026. Su tamaño N en la base completa no se conoce.'],
+      ['Muestra', `n = ${nf(d.n)} registros elegibles de los ${nf(p.recibidos)} recibidos (1.000 por mes, 9 meses). No son ${nf(d.n)} clientes únicos.`],
+      ['Parámetro', 'El cargo fijo promedio de toda la población, μ. Desconocido: solo se puede estimar.'],
+      ['Estadístico', `El cargo fijo promedio de la muestra, x̄ = $${nf(d.exactas.media, 0)}. Describe los registros analizados.`],
+    ];
+    $('conceptos').innerHTML = conceptos.map(([t, x], i) => `<div class="card sube" style="--d:${i * 80}"><h4>${t}</h4><p class="hint">${x}</p></div>`).join('');
+    $('t-variables').innerHTML = '<tr><th>Variable</th><th>Tipo</th><th>Nivel</th><th>Codificación verificada</th><th class="num">Válidos</th><th class="num">Distintos</th></tr>' +
+      d.clasificacion.map(v => `<tr><td><b style="font-weight:600">${v.variable}</b></td><td>${v.tipo}</td><td>${v.nivel}</td><td>${v.codificacion_verificada}</td><td class="num">${nf(v.validos)}</td><td class="num">${nf(v.distintos)}</td></tr>`).join('');
+    $('f-poblacion').textContent = `La meta de 100.000 registros no se cumplió: se recibieron ${nf(p.recibidos)} (1.000 por mes, sin septiembre) y ${nf(d.n)} cumplen los criterios. ${nf(p.edad_cero_cedula)} cédulas tenían la edad en 0 y ${nf(p.nit)} registros eran empresas. El ${pc(p.postpago_elegibles)} de los elegibles es postpago.`;
+  }
+
+  // ---------- DATOS AGRUPADOS (cálculo en vivo, misma lógica que el notebook 01) ----------
+  let MES = 'todos';
+  const freqs = () => (MES === 'todos' ? D.descriptiva.cfm_frecuencias : D.descriptiva.por_mes[MES].cfm_frecuencias);   // [valor, conteo]
+  const nombreMes = () => (MES === 'todos' ? 'Todos los meses' : D.descriptiva.por_mes[MES].nombre);
+  const sturges = n => 1 + 3.322 * Math.log10(n);
+  function exactasDe(fr) {             // mismas definiciones que pandas en el notebook 01
+    const a = []; fr.forEach(([v, c]) => { for (let i = 0; i < c; i++) a.push(v); });
+    const n = a.length, media = a.reduce((s, v) => s + v, 0) / n;
+    const q = p => { const pos = (n - 1) * p, lo = Math.floor(pos); return lo + 1 < n ? a[lo] + (pos - lo) * (a[lo + 1] - a[lo]) : a[lo]; };
+    const top = fr.reduce((b, x) => (x[1] > b[1] ? x : b), fr[0]);
+    const varianza = a.reduce((s, v) => s + (v - media) ** 2, 0) / (n - 1), sd = Math.sqrt(varianza);
+    const Q3 = q(0.75);
+    return { n, media, mediana: q(0.5), moda: top[0], Q1: q(0.25), Q2: q(0.5), Q3, varianza, desviacion: sd, cv: sd / media * 100,
+      ceros: a.filter(v => v === 0).length, top_pct: top[1] / n, sobre_Q3: a.filter(v => v > Q3).length };
+  }
+  function setupFiltro() {
+    const todos = (D.preparacion.estratos || []).map(e => e.mes);
+    const opciones = [['todos', 'Todos'], ...todos.map(m => [m, (D.descriptiva.por_mes[m] || { nombre: (D.preparacion.estratos.find(e => e.mes === m) || {}).nombre || m }).nombre.slice(0, 3)])];
+    $('filtro-mes').innerHTML = opciones.map(([m, t]) => { const hay = m === 'todos' || D.descriptiva.por_mes[m];
+      return `<button type="button" class="pill${hay ? '' : ' vacio'}" data-mes="${m}" aria-pressed="${m === MES}" ${hay ? '' : 'disabled title="Sin registros ese mes"'}><span class="fill"></span><span>${t}</span></button>`; }).join('');
+    $('filtro-mes').querySelectorAll('button[data-mes]').forEach(b => b.addEventListener('click', () => {
+      if (b.disabled) return; MES = b.dataset.mes;
+      $('filtro-mes').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x.dataset.mes === MES));
+      const k = Math.round(sturges(exactasDe(freqs()).n)); $('k-slider').value = k; $('k-out').textContent = k;
+      renderAgrupados(k); renderProporciones();
+    }));
+  }
+  function agrupar(k) {
+    const fr = freqs(), n = fr.reduce((a, [, c]) => a + c, 0);
+    const xmin = fr[0][0], xmax = fr[fr.length - 1][0], R = xmax - xmin, A = Math.ceil(R / k);
+    const L = [...Array(k)].map((_, i) => xmin + i * A), U = L.map(l => l + A), m = L.map((l, i) => (l + U[i]) / 2);
+    const f = Array(k).fill(0);
+    fr.forEach(([v, c]) => { f[Math.min(Math.floor((v - xmin) / A), k - 1)] += c; });
+    const F = []; f.reduce((a, b, i) => (F[i] = a + b), 0);
+    const Fant = i => (i ? F[i - 1] : 0);
+    const sfm = f.reduce((a, fi, i) => a + fi * m[i], 0), media = sfm / n;
+    const cuantil = p => { const pos = p * n; const i = F.findIndex(x => x >= pos); return { p, pos, i, L: L[i], Fa: Fant(i), f: f[i], valor: L[i] + (pos - Fant(i)) / f[i] * A }; };
+    const Q1 = cuantil(0.25), Q2 = cuantil(0.5), Q3 = cuantil(0.75);
+    const im = f.indexOf(Math.max(...f)), fp = im > 0 ? f[im - 1] : 0, fn = im < k - 1 ? f[im + 1] : 0, d1 = f[im] - fp, d2 = f[im] - fn;
+    const unica = f.filter(x => x === f[im]).length === 1;
+    const moda = (d1 + d2) > 0 && unica ? L[im] + d1 / (d1 + d2) * A : null;
+    const scuad = f.reduce((a, fi, i) => a + fi * (m[i] - media) ** 2, 0), varianza = scuad / (n - 1), sd = Math.sqrt(varianza);
+    return { k, n, xmin, xmax, R, A, L, U, m, f, F, sfm, media, Q1, Q2, Q3, moda, im, fp, fn, d1, d2, scuad, varianza, sd, cv: sd / media * 100 };
+  }
+  let G, EX;
+  function setupAgrupados() {
+    const g0 = D.descriptiva.agrupados, sl = $('k-slider');
+    const upd = () => { $('k-out').textContent = sl.value; renderAgrupados(+sl.value); };
+    sl.addEventListener('input', upd);
+    $('k-reset').addEventListener('click', () => { sl.value = Math.round(sturges(exactasDe(freqs()).n)); upd(); });
+    setupFiltro();
+    renderAgrupados(g0.k);
+  }
+  function renderAgrupados(k) {
+    G = agrupar(k);
+    const n = G.n, kS = sturges(n), g0 = { k: Math.round(kS), k_sturges: kS };
+    EX = exactasDe(freqs());
+    $('k-nota').textContent = k === g0.k ? `k = ${k} es el valor de Sturges (1 + 3,322·log₁₀ ${nf(n)} = ${nf(g0.k_sturges, 3)}).`
+      : `Con k = ${k} la amplitud pasa a $${nf(G.A)}. Sturges sugiere k = ${g0.k}.`;
+    $('filtro-nota').textContent = MES === 'todos' ? `Mostrando los ${nf(n)} registros elegibles de los 9 meses. Afecta a datos agrupados, medidas y proporciones.`
+      : `Mostrando ${nf(n)} registros de ${nombreMes().toLowerCase()}. Con menos datos, Sturges sugiere menos clases (k = ${g0.k}).`;
+    ['chip-medidas', 'chip-proporciones'].forEach(id => { $(id).textContent = `Filtro: ${nombreMes()} · cambiar`; });
+    $('pasos-agrupados').innerHTML = [
+      ['Rango', 'Distancia entre el máximo y el mínimo válidos', `R = X<sub>max</sub> − X<sub>min</sub> = ${nf(G.xmax)} − ${nf(G.xmin)} = <span class="res">${nf(G.R)}</span>`],
+      ['Número de clases (Sturges)', 'Orientación inicial; se redondea al entero', `k ≈ 1 + 3,322·log<sub>10</sub>(${nf(n)}) = ${nf(g0.k_sturges, 3)} → <span class="res">k = ${g0.k}</span>${k !== g0.k ? ` · usando k = ${k}` : ''}`],
+      ['Amplitud', 'Redondeada hacia arriba al peso, para que k·A cubra el rango', `A = ⌈R / k⌉ = ⌈${nf(G.R)} / ${k}⌉ = <span class="res">${nf(G.A)}</span>`],
+      ['Marcas de clase', 'Punto medio de cada intervalo [L, U)', `m<sub>i</sub> = (L<sub>i</sub> + U<sub>i</sub>) / 2 · por ejemplo m<sub>${G.im + 1}</sub> = (${nf(G.L[G.im])} + ${nf(G.U[G.im])}) / 2 = <span class="res">${nf(G.m[G.im])}</span>`],
+    ].map(([t, h, f], i) => `<div class="paso"><span class="num">${i + 1}</span><div><h4 style="font-size:19px">${t}</h4><p class="hint">${h}</p><div class="formula">${f}</div></div></div>`).join('');
+    $('t-frecuencias').innerHTML = '<tr><th>Clase</th><th class="num">L<sub>i</sub></th><th class="num">U<sub>i</sub></th><th class="num">Marca m<sub>i</sub></th><th class="num">f<sub>i</sub></th><th class="num">h<sub>i</sub></th><th class="num">F<sub>i</sub></th><th class="num">H<sub>i</sub></th><th></th></tr>' +
+      G.f.map((fi, i) => `<tr class="${i === G.im ? 'destacada' : ''}"><td>${i + 1}</td><td class="num">${nf(G.L[i])}</td><td class="num">${nf(G.U[i])}</td><td class="num">${nf(G.m[i], 1)}</td><td class="num">${nf(fi)}</td><td class="num">${nf(fi / n, 4)}</td><td class="num">${nf(G.F[i])}</td><td class="num">${nf(G.F[i] / n, 4)}</td><td style="width:16%"><div class="bar"><div style="width:${100 * fi / Math.max(...G.f)}%;background:${i === G.im ? C.coral : C.navy}"></div></div></td></tr>`).join('') +
+      `<tr><td><b>Total</b></td><td></td><td></td><td></td><td class="num"><b>${nf(n)}</b></td><td class="num"><b>${nf(G.f.reduce((a, b) => a + b, 0) / n, 4)}</b></td><td></td><td></td><td></td></tr>`;
+    const xs = G.m;
+    Plotly.react('p-hist', [
+      { type: 'bar', x: xs, y: G.f, width: G.A * 0.98, marker: { color: G.f.map((_, i) => i === G.im ? C.coral : C.navy) }, name: 'Histograma',
+        customdata: G.L.map((l, i) => [l, G.U[i]]), hovertemplate: '[%{customdata[0]:,.0f}, %{customdata[1]:,.0f})<br>f = %{y:,}<extra></extra>' },
+      { type: 'scatter', mode: 'lines+markers', x: [G.m[0] - G.A, ...xs, G.m[G.k - 1] + G.A], y: [0, ...G.f, 0], name: 'Polígono',
+        line: { color: C.aqua, width: 2 }, marker: { size: 6 }, hovertemplate: 'marca %{x:,.0f}<br>f = %{y:,}<extra></extra>' }],
+      L2({ showlegend: true, legend: { orientation: 'h', y: 1.15, font: { color: C.ink } }, xaxis: { gridcolor: C.rule, title: { text: 'Cargo fijo (COP)', font: { size: 12 } }, tickformat: ',.0f' },
+        yaxis: { gridcolor: C.rule, title: { text: 'Frecuencia', font: { size: 12 } } } }), cfg);
+    Plotly.react('p-ojiva', [{ type: 'scatter', mode: 'lines+markers', x: [G.L[0], ...G.U], y: [0, ...G.F.map(v => v / n)], line: { color: C.navy, width: 2, shape: 'linear' },
+      fill: 'tozeroy', fillcolor: 'rgba(48,63,128,0.08)', hovertemplate: 'hasta %{x:,.0f}: %{y:.1%}<extra></extra>' }],
+      L2({ xaxis: { gridcolor: C.rule, tickformat: ',.0f', title: { text: 'Ojiva · frecuencia relativa acumulada', font: { size: 12 } } }, yaxis: { gridcolor: C.rule, tickformat: '.0%', range: [0, 1.05] },
+        shapes: [0.25, 0.5, 0.75].map(p => ({ type: 'line', x0: G.L[0], x1: G.U[G.k - 1], y0: p, y1: p, line: { color: C.coral, dash: 'dot', width: 1 } })) }), cfg);
+    const pctModal = G.f[G.im] / n, ext = { valor_mas_frecuente_pct: EX.top_pct };
+    $('qa-agrupados').innerHTML = qa('¿Qué extensión de cargos y qué intervalos permiten describir grupos comercialmente relevantes? (5.4.1)',
+      `Los cargos van de $${nf(G.xmin)} a $${nf(G.xmax)} (R = $${nf(G.R)}). Con ${k} clases de $${nf(G.A)}, la clase [${nf(G.L[G.im])}, ${nf(G.U[G.im])}) concentra el ${pc(pctModal)} de los registros: el grupo comercial dominante. Las clases extremas son nichos de pocos registros.`,
+      'Identificar el plan masivo que define a la base y los nichos de cargo bajo o alto que merecen campañas diferenciadas.') +
+      qa('¿Qué proporción de registros se ubica en cada intervalo o no supera un límite? (5.4.2)',
+        `Hasta $${nf(G.U[G.im])} se acumula el ${pc(G.F[G.im] / n)} de los registros; por encima solo queda el ${pc(1 - G.F[G.im] / n)}. Un solo valor exacto, $${nf(EX.moda)}, reúne el ${pc(ext.valor_mas_frecuente_pct)} de la selección.`,
+        'Dimensionar cuántos registros quedan por encima de un umbral de cargo antes de diseñar una oferta de upgrade.');
+    renderMedidas();
+  }
+
+  // ---------- MEDIDAS ----------
+  function renderMedidas() {
+    const ex = EX, n = G.n, A = G.A;
+    const cq = (q, nom, j) => `${nom} = L + [(${j}n/4 − F<sub>i−1</sub>) / f<sub>i</sub>]·A = ${nf(q.L)} + [(${nf(q.pos, 1)} − ${nf(q.Fa)}) / ${nf(q.f)}]·${nf(A)} = <span class="res">${nf(q.valor, 1)}</span>`;
+    const tarjetas = [
+      { t: 'Media aritmética', s: '5.5.1', v: G.media, e: ex.media, f: `x̄ ≈ Σ f<sub>i</sub>·m<sub>i</sub> / n = ${nf(G.sfm)} / ${nf(n)} = <span class="res">${nf(G.media, 1)}</span>`,
+        q: '¿Cuál es el cargo fijo promedio de los registros seleccionados?', r: `En promedio, $${nf(ex.media)} al mes (agrupado: $${nf(G.media)}). ${EX.ceros ? `Las ${nf(EX.ceros)} líneas con cargo 0 lo bajan respecto de la mediana.` : 'No hay líneas con cargo 0 en esta selección.'}`,
+        u: 'Comparar niveles medios entre grupos, considerando el efecto de los valores extremos.' },
+      { t: 'Mediana', s: '5.5.2', v: G.Q2.valor, e: ex.mediana, f: cq(G.Q2, 'Me', 2),
+        q: '¿Qué cargo fijo marca el centro de la distribución?', r: `El registro central paga $${nf(ex.mediana)}; con la interpolación agrupada, $${nf(G.Q2.valor)}.`,
+        u: 'Una referencia menos sensible a extremos para comparar niveles de cargo.' },
+      { t: 'Moda', s: '5.5.3', v: G.moda, e: ex.moda, f: G.moda == null ? 'No hay una clase modal única: se reporta la limitación.' :
+          `Mo = L + [d<sub>1</sub> / (d<sub>1</sub> + d<sub>2</sub>)]·A = ${nf(G.L[G.im])} + [${nf(G.d1)} / (${nf(G.d1)} + ${nf(G.d2)})]·${nf(A)} = <span class="res">${nf(G.moda, 1)}</span>`,
+        q: '¿Qué intervalo de cargo fijo es el más frecuente?', r: `La clase modal es [${nf(G.L[G.im])}, ${nf(G.U[G.im])}). El valor exacto más repetido es $${nf(ex.moda)} (${pc(EX.top_pct)} de los registros).`,
+        u: 'Reconocer el nivel de cargo predominante: el plan de referencia de la base.' },
+      { t: 'Primer cuartil', s: '5.6.1', v: G.Q1.valor, e: ex.Q1, f: cq(G.Q1, 'Q<sub>1</sub>', 1),
+        q: '¿Hasta qué cargo se concentra aproximadamente el 25 % de los registros?', r: `Agrupado: hasta $${nf(G.Q1.valor)}. Exacto: $${nf(ex.Q1)}${EX.top_pct > 0.5 ? ', porque más de la mitad de la selección tiene el mismo valor' : ''}.`,
+        u: 'Describir el grupo de cargos inferiores.' },
+      { t: 'Segundo cuartil', s: '5.6.2', v: G.Q2.valor, e: ex.Q2, f: cq(G.Q2, 'Q<sub>2</sub>', 2),
+        q: '¿Qué cargo constituye el límite central?', r: `Q₂ coincide con la mediana: $${nf(G.Q2.valor)} agrupado, $${nf(ex.Q2)} exacto.`, u: 'Comparar la distribución a ambos lados del centro.' },
+      { t: 'Tercer cuartil', s: '5.6.3', v: G.Q3.valor, e: ex.Q3, f: cq(G.Q3, 'Q<sub>3</sub>', 3),
+        q: '¿Hasta qué cargo se concentra aproximadamente el 75 %?', r: `Agrupado: $${nf(G.Q3.valor)}. Por encima de Q₃ exacto ($${nf(ex.Q3)}) hay ${nf(EX.sobre_Q3)} registros (${pc(EX.sobre_Q3 / n)}).`,
+        u: 'Describir los cargos superiores y el grupo situado por encima de Q₃: candidatos a retención de alto valor.' },
+      { t: 'Varianza muestral', s: '5.7.1', v: G.varianza, e: ex.varianza, f: `s² ≈ Σ f<sub>i</sub>(m<sub>i</sub> − x̄)² / (n − 1) = ${nf(G.scuad)} / ${nf(n - 1)} = <span class="res">${nf(G.varianza)}</span>`,
+        q: '¿Qué dispersión cuadrática presentan los cargos fijos?', r: `s² = ${nf(ex.varianza)} pesos² (agrupada: ${nf(G.varianza)}). Está en unidades al cuadrado: se interpreta mejor con su raíz.`,
+        u: 'Evaluar la heterogeneidad de los niveles de cargo entre grupos.' },
+      { t: 'Desviación estándar', s: '5.7.2', v: G.sd, e: ex.desviacion, f: `s = √s² = √${nf(G.varianza)} = <span class="res">${nf(G.sd, 1)}</span>`,
+        q: '¿Cuánto varían los cargos respecto del promedio, en pesos?', r: `Un registro típico se aleja unos $${nf(ex.desviacion)} del promedio.`, u: 'Comunicar la dispersión en pesos, una escala directamente interpretable.' },
+      { t: 'Coeficiente de variación', s: '5.7.3', v: G.cv, e: ex.cv, f: `CV = (s / x̄)·100 = (${nf(G.sd, 1)} / ${nf(G.media, 1)})·100 = <span class="res">${nf(G.cv, 1)} %</span>`,
+        q: '¿Qué grupos presentan mayor variación relativa de su cargo fijo?', r: `En ${MES === 'todos' ? 'toda la muestra' : nombreMes().toLowerCase()}, CV = ${nf(ex.cv, 1)} %${ex.cv < 20 ? ': dispersión baja' : ''}. Por segmentos (Parte 2), el grupo con huella básica llega a ${nf(Math.max(...D.ciencia.perfiles.map(p => p.cfm_cv)), 1)} %.`,
+        u: 'Comparar heterogeneidad entre grupos con promedios distintos.', pct: true },
+    ];
+    $('tarjetas-medidas').innerHTML = tarjetas.map((t, i) => `<div class="card medida sube" style="--d:${(i % 3) * 80}">
+      <h3>${t.s} · ${t.t}</h3><span class="val">${t.v == null ? '—' : (t.pct ? `${nf(t.v, 1)} %` : nf(t.v, t.t.startsWith('Varianza') ? 0 : 1))}</span>
+      <span class="cmp">exacto: ${t.pct ? `${nf(t.e, 1)} %` : nf(t.e, t.t.startsWith('Varianza') ? 0 : 1)} · diferencia ${t.v == null ? '—' : nf(100 * (t.v - t.e) / t.e, 1) + ' %'}</span>
+      <div class="formula">${t.f}</div><div class="qa">${qa(t.q, t.r, t.u)}</div></div>`).join('');
+    const marcas = [['Q₁', G.Q1.valor, C.ink2], ['Mediana', G.Q2.valor, C.navy], ['Q₃', G.Q3.valor, C.ink2], ['Media', G.media, C.coral], ['Moda', G.moda, C.aqua]].filter(m => m[1] != null);
+    Plotly.react('p-recta', [
+      { type: 'scatter', mode: 'markers+text', x: marcas.map(m => m[1]), y: marcas.map((_, i) => (i % 2 ? 0.55 : -0.55)), text: marcas.map(m => `${m[0]}<br>$${nf(m[1])}`),
+        textposition: marcas.map((_, i) => (i % 2 ? 'top center' : 'bottom center')), marker: { size: 14, symbol: 'diamond', color: marcas.map(m => m[2]) },
+        textfont: { color: C.ink, size: 12 }, hovertemplate: '%{text}<extra></extra>' },
+      { type: 'scatter', mode: 'lines', x: [G.L[G.im], G.U[G.im]], y: [0, 0], line: { color: C.coral, width: 10 }, hoverinfo: 'skip', opacity: 0.35 }],
+      L2({ xaxis: { gridcolor: C.rule, tickformat: ',.0f', range: [Math.min(...marcas.map(m => m[1])) - G.A * 0.6, Math.max(...marcas.map(m => m[1])) + G.A * 0.6] },
+        yaxis: { visible: false, range: [-2, 2] }, margin: { l: 20, r: 20, t: 10, b: 36 } }), cfg);
+    const filas = [['Media', G.media, ex.media], ['Mediana', G.Q2.valor, ex.mediana], ['Moda', G.moda, ex.moda], ['Q₁', G.Q1.valor, ex.Q1], ['Q₃', G.Q3.valor, ex.Q3],
+      ['Varianza', G.varianza, ex.varianza], ['Desviación estándar', G.sd, ex.desviacion], ['Coeficiente de variación (%)', G.cv, ex.cv]];
+    $('t-comparacion').innerHTML = '<tr><th>Medida</th><th class="num">Agrupada (k = ' + G.k + ')</th><th class="num">Exacta</th><th class="num">Diferencia</th><th class="num">Diferencia %</th></tr>' +
+      filas.map(([nme, a, e]) => `<tr><td>${nme}</td><td class="num">${nf(a, 1)}</td><td class="num">${nf(e, 1)}</td><td class="num">${a == null ? '—' : nf(a - e, 1)}</td><td class="num">${a == null ? '—' : nf(100 * (a - e) / e, 2) + ' %'}</td></tr>`).join('');
+    $('f-medidas').textContent = `Las medidas agrupadas se acercan a las exactas (media: ${nf(100 * (G.media - ex.media) / ex.media, 1)} %), pero los cuartiles no: con el ${pc(EX.top_pct)} de los registros en un solo valor ($${nf(EX.moda)}), los cuartiles exactos tienden a coincidir y la interpolación, que supone datos uniformes dentro de la clase, los separa artificialmente.`;
+  }
+
+  // ---------- ANTIGÜEDAD ----------
+  function renderAntiguedad() {
+    const a = D.descriptiva.antiguedad, t = D.descriptiva.antiguedad_tramos;
+    $('kpis-antig').innerHTML = [[nf(a.media, 1), 'Media (meses)', `n = ${nf(a.n)}`], [nf(a.mediana, 0), 'Mediana', 'meses'], [nf(a.moda), 'Moda', `${pc(a.pct_moda)} de los registros`],
+      [`${nf(a.Q1, 0)}–${nf(a.Q3, 0)}`, 'Q₁ – Q₃', 'meses'], [nf(a.desviacion, 1), 'Desviación', 'meses'], [`${nf(a.cv, 0)} %`, 'Coef. de variación', 'muy heterogénea']]
+      .map(([v, l, n]) => `<div class="kpi"><span class="v">${v}</span><span class="l">${l}</span><span class="n">${n}</span></div>`).join('');
+    Plotly.react('p-antig', [{ type: 'bar', x: t.map(r => r.tramo), y: t.map(r => r.f), text: t.map(r => pc(r.h)), textposition: 'outside',
+      marker: { color: t.map((_, i) => (i === 0 ? C.coral : C.navy)) }, textfont: { color: C.ink, size: 13 }, hovertemplate: '%{x}: %{y:,} registros<extra></extra>' }],
+      L2({ yaxis: { gridcolor: C.rule, range: [0, Math.max(...t.map(r => r.f)) * 1.18] }, bargap: 0.35 }), cfg);
+    const largo = t.slice(2).reduce((s, r) => s + r.f, 0);
+    $('qa-antig').innerHTML = qa('¿Cómo se distribuye la antigüedad de los registros y qué grupos podrían orientar estrategias de fidelización?',
+      `Muy sesgada a la derecha: la mediana es ${nf(a.mediana)} mes y el ${pc(t[0].h)} tiene entre 0 y 3 meses, mientras la media (${nf(a.media, 1)}) la arrastran pocas líneas de hasta ${nf(a.max)} meses. Dos grupos: líneas nuevas (0–3 meses) para bienvenida y retención temprana, y ${nf(largo)} líneas de más de un año para fidelización.`,
+      'Caracterizar la permanencia para decidir dónde poner el esfuerzo: retener líneas nuevas cuesta menos que recuperarlas.');
+  }
+
+  // ---------- REGRESIÓN ----------
+  function renderRegresion() {
+    const r = D.regresion, s = r.sumas, nube = r.nube;
+    const x0 = r.x_rango[0], x1 = r.x_rango[1];
+    Plotly.react('p-dispersion', [
+      { type: 'scatter', mode: 'markers', x: nube.map(p => p[0]), y: nube.map(p => p[1]), marker: { size: nube.map(p => 5 + 6 * Math.log10(p[2])), sizemode: 'diameter',
+        color: 'rgba(48,63,128,0.35)', line: { color: C.navy, width: 0.5 } }, customdata: nube.map(p => p[2]),
+        hovertemplate: 'antigüedad %{x} meses<br>cargo $%{y:,.0f}<br>%{customdata:,} registros<extra></extra>', name: 'Registros' },
+      { type: 'scatter', mode: 'lines', x: [x0, x1], y: [r.a + r.b * x0, r.a + r.b * x1], line: { color: C.coral, width: 3 }, name: 'Ŷ = a + bX',
+        hovertemplate: 'Ŷ = %{y:,.0f}<extra></extra>' }],
+      L2({ xaxis: { gridcolor: C.rule, title: { text: 'Antigüedad (meses)', font: { size: 12 } } }, yaxis: { gridcolor: C.rule, tickformat: ',.0f', title: { text: 'Cargo fijo (COP)', font: { size: 12 } } },
+        annotations: [{ x: x1 * 0.62, y: r.a + r.b * x1 * 0.62, text: `Ŷ = ${nf(r.a, 0)} − ${nf(-r.b, 2)}·X`, showarrow: true, ay: -40, font: { color: C.ink, size: 13 }, arrowcolor: C.coral }] }), cfg);
+    $('pasos-regresion').innerHTML = [
+      ['Sumas', `n = ${nf(s.n)} · Σx = ${nf(s.Sx)} · Σy = ${nf(s.Sy)} · Σxy = ${nf(s.Sxy)} · Σx² = ${nf(s.Sxx)} · Σy² = ${nf(s.Syy)}`],
+      ['Pendiente', `b = [nΣxy − ΣxΣy] / [nΣx² − (Σx)²] = ${nf(s.num)} / ${nf(s.den_x)} = <span class="res">${nf(r.b, 2)}</span>`],
+      ['Intercepto', `a = ȳ − b·x̄ = ${nf(s.ybar, 1)} − (${nf(r.b, 2)})·${nf(s.xbar, 2)} = <span class="res">${nf(r.a, 1)}</span>`],
+      ['Pearson', `r = [nΣxy − ΣxΣy] / √([nΣx² − (Σx)²][nΣy² − (Σy)²]) = <span class="res">${nf(r.r, 4)}</span>`],
+      ['Determinación', `R² = r² = (${nf(r.r, 4)})² = <span class="res">${nf(r.R2, 4)}</span>`],
+    ].map(([t, f], i) => `<div class="paso"><span class="num">${i + 1}</span><div><h4 style="font-size:18px">${t}</h4><div class="formula" style="font-size:16px">${f}</div></div></div>`).join('') +
+      `<p class="note">Validado con scipy.stats.linregress: pendiente ${nf(r.scipy.slope, 4)}, r ${nf(r.scipy.rvalue, 4)}. Diferencias menores a 10⁻⁹.</p>`;
+    $('t-sensibilidad').innerHTML = '<tr><th>Escenario</th><th class="num">n</th><th class="num">b</th><th class="num">r</th><th class="num">R²</th></tr>' +
+      r.sensibilidad.map(e => `<tr><td>${e.escenario}</td><td class="num">${nf(e.n)}</td><td class="num">${nf(e.b, 1)}</td><td class="num">${nf(e.r, 3)}</td><td class="num">${nf(e.R2, 3)}</td></tr>`).join('');
+    const bordes = r.residuos.bordes;
+    Plotly.react('p-residuos', [{ type: 'bar', x: bordes.slice(0, -1).map((b, i) => (b + bordes[i + 1]) / 2), y: r.residuos.hist, marker: { color: C.navy },
+      hovertemplate: 'residuo ≈ %{x:,.0f}<br>%{y:,} registros<extra></extra>' }],
+      L2({ bargap: 0.05, xaxis: { gridcolor: C.rule, tickformat: ',.0f', title: { text: 'Residuo eᵢ = yᵢ − ŷᵢ (COP)', font: { size: 12 } } } }), cfg);
+    $('qa-regresion').innerHTML = qa('¿Cómo cambia el cargo fijo estimado cuando aumenta un mes la antigüedad? (5.8)',
+      `Baja en promedio $${nf(-r.b, 2)} por cada mes adicional (Ŷ = ${nf(r.a, 0)} − ${nf(-r.b, 2)}·X). En 10 años serían unos $${nf(-r.b * 120)} menos: las líneas antiguas conservan planes más baratos. Sin las 45 líneas con cargo 0, la pendiente cae a ${nf(r.sensibilidad[1].b, 1)}.`,
+      'Explorar si la permanencia ayuda a describir diferencias de cargo; sugiere revisar planes antiguos como oportunidad de actualización. No demuestra causalidad.') +
+      qa('¿Qué dirección y fuerza tiene la asociación lineal entre antigüedad y cargo fijo? (5.9)',
+        `Negativa y débil: r = ${nf(r.r, 3)}. La antigüedad explica apenas el ${pc(r.R2)} de la variabilidad del cargo (R²). Con ${nf(r.residuos.atipicos)} residuos atípicos, el ajuste es sensible a extremos.`,
+        'La antigüedad sola no sirve para predecir el cargo de una línea; hay que combinarla con otras variables al segmentar.');
+    // 3D conjunta: tramos de antigüedad × rangos de cargo
+    const tramosA = [[0, 3, '0–3'], [4, 12, '4–12'], [13, 36, '13–36'], [37, 120, '37–120'], [121, 1e9, '>120']];
+    const rangos = [[0, 1, '$0'], [1, 30000, '<$30 mil'], [30000, 40185, '$30–40 mil'], [40185, 40186, '$40.185'], [40186, 50000, '$40–50 mil'], [50000, 1e9, '≥$50 mil']];
+    const cnt = tramosA.map(() => rangos.map(() => 0));
+    nube.forEach(([x, y, c]) => { const i = tramosA.findIndex(t => x >= t[0] && x <= t[1]); const j = rangos.findIndex(g => y >= g[0] && y < g[1]); if (i >= 0 && j >= 0) cnt[i][j] += c; });
+    const bars = [];
+    cnt.forEach((fila, i) => fila.forEach((c, j) => { if (c > 0) bars.push({ x: i, y: j, w: 0.6, h: Math.log10(c + 1), val: Math.log10(c + 1), text: `Antigüedad ${tramosA[i][2]} meses · cargo ${rangos[j][2]}<br>${nf(c)} registros` }); }));
+    const mesh = prismas(bars, { colorscale: SEQ });
+    Plotly.react('p-conjunta', [mesh], {
+      paper_bgcolor: 'rgba(0,0,0,0)', separators: ',.', font, hoverlabel, margin: { l: 0, r: 0, t: 0, b: 0 },
+      scene: { xaxis: ax3('Antigüedad (meses)', { tickvals: tramosA.map((_, i) => i), ticktext: tramosA.map(t => t[2]) }),
+        yaxis: ax3('Cargo fijo', { tickvals: rangos.map((_, j) => j), ticktext: rangos.map(g => g[2]) }),
+        zaxis: ax3('Registros (log₁₀)', { tickvals: [0, 1, 2, 3], ticktext: ['1', '10', '100', '1.000'] }),
+        camera: { eye: { x: 1.6, y: -1.6, z: 1.0 } }, aspectmode: 'manual', aspectratio: { x: 1.1, y: 1.2, z: 0.7 } } }, cfg);
+  }
+
+  // prismas 3D (barras)
+  function cubo(x0, y0, w, h) {
+    const x1 = x0 + w, y1 = y0 + w;
+    return { x: [x0, x1, x1, x0, x0, x1, x1, x0], y: [y0, y0, y1, y1, y0, y0, y1, y1], z: [0, 0, 0, 0, h, h, h, h],
+      i: [7, 0, 0, 0, 4, 4, 6, 6, 4, 0, 3, 2], j: [3, 4, 1, 2, 5, 6, 5, 2, 0, 1, 6, 3], k: [0, 7, 2, 3, 6, 7, 1, 1, 5, 5, 7, 6] };
+  }
+  function prismas(lista, opts) {
+    const m = { x: [], y: [], z: [], i: [], j: [], k: [], text: [], intensity: [] };
+    lista.forEach(b => {
+      const c = cubo(b.x - b.w / 2, b.y - b.w / 2, b.w, b.h), off = m.x.length;
+      m.x.push(...c.x); m.y.push(...c.y); m.z.push(...c.z);
+      m.i.push(...c.i.map(v => v + off)); m.j.push(...c.j.map(v => v + off)); m.k.push(...c.k.map(v => v + off));
+      for (let q = 0; q < 8; q++) { m.text.push(b.text); m.intensity.push(b.val ?? b.h); }
+    });
+    return Object.assign({ type: 'mesh3d', x: m.x, y: m.y, z: m.z, i: m.i, j: m.j, k: m.k, text: m.text, hovertemplate: '%{text}<extra></extra>', flatshading: true,
+      lighting: { ambient: 0.62, diffuse: 0.75, specular: 0.08, roughness: 0.8 }, lightposition: { x: 1000, y: -500, z: 2000 } },
+      opts.color ? { color: opts.color } : { intensity: m.intensity, colorscale: opts.colorscale, showscale: false }, opts.extra || {});
+  }
+
+  // ---------- PROPORCIONES ----------
+  function renderProporciones() {
+    const p = MES === 'todos' ? D.descriptiva.proporciones : D.descriptiva.por_mes[MES].proporciones, pm = D.ciencia.prop_medidos;
+    const items = [['Banca digital', 'BAN_BANCA'], ['Billetera', 'BAN_BILLETERA'], ['Pagos en línea', 'BAN_PAGOS_ONLINE'], ['Banca y pagos', 'BANCA_Y_PAGOS'], ['Restricción de contacto', 'BAN_SUPRESION_I']];
+    const nom = items.map(i => i[0]);
+    Plotly.react('p-proporciones', [
+      { type: 'bar', orientation: 'h', name: MES === 'todos' ? 'Toda la muestra (9 meses)' : nombreMes(), y: nom, x: items.map(i => p[i[1]].p), text: items.map(i => pc(p[i[1]].p)),
+        textposition: 'outside', cliponaxis: false, marker: { color: items.map(i => (i[1] === 'BAN_SUPRESION_I' ? C.coral : C.navy)) }, textfont: { color: C.ink, size: 12 },
+        customdata: items.map(i => [p[i[1]].f, p[i[1]].n]), hovertemplate: '%{y}: %{x:.1%}<br>%{customdata[0]:,} de %{customdata[1]:,}<extra></extra>' },
+      ...(MES !== 'todos' ? [] : [{ type: 'bar', orientation: 'h', name: 'Solo meses con huella medida (ene–jun)', y: nom.slice(0, 3), x: items.slice(0, 3).map(i => pm[i[1]]), text: items.slice(0, 3).map(i => pc(pm[i[1]])),
+        textposition: 'outside', cliponaxis: false, marker: { color: C.aqua }, textfont: { color: C.ink, size: 12 }, hovertemplate: '%{y} (ene–jun): %{x:.1%}<extra></extra>' }])],
+      L2({ barmode: 'group', showlegend: true, legend: { orientation: 'h', y: 1.14, font: { color: C.ink } }, margin: { l: 150, r: 40, t: 10, b: 36 },
+        xaxis: { gridcolor: C.rule, tickformat: '.0%', range: [0, 1] }, yaxis: { autorange: 'reversed' }, bargap: 0.25, bargroupgap: 0.05 }), cfg);
+    Plotly.react('p-restriccion', [{ type: 'bar', x: ['Contactables', 'Con restricción'], y: [p.BANCA_EN_CONTACTABLES.p, p.BANCA_EN_RESTRINGIDOS.p],
+      text: [`${pc(p.BANCA_EN_CONTACTABLES.p)} de ${nf(p.BANCA_EN_CONTACTABLES.n)}`, `${pc(p.BANCA_EN_RESTRINGIDOS.p)} de ${nf(p.BANCA_EN_RESTRINGIDOS.n)}`], textposition: 'outside',
+      marker: { color: [C.aqua, C.gray] }, textfont: { color: C.ink, size: 13 }, hovertemplate: '%{x}: %{y:.1%} con banca digital<extra></extra>' }],
+      L2({ yaxis: { gridcolor: C.rule, tickformat: '.0%', range: [0, Math.max(0.4, (p.BANCA_EN_CONTACTABLES.p || 0) * 1.2)] }, bargap: 0.45 }), cfg);
+    const cards = [
+      ['5.3.3 · Banca digital', '¿Qué proporción de registros presenta el indicador de banca digital activo?', `${pc(p.BAN_BANCA.p)} (${nf(p.BAN_BANCA.f)} de ${nf(p.BAN_BANCA.n)}). ${MES === 'todos' ? `En los meses en que la huella sí se midió, ${pc(pm.BAN_BANCA)}.` : (D.ciencia.meses_medidos.includes(MES) ? 'En este mes la huella sí se midió.' : 'Ojo: en este mes la huella digital no se midió, así que el valor no es comparable.')}`, 'Caracterizar afinidades digitales para segmentación.'],
+      ['5.3.4 · Billeteras digitales', '¿Qué proporción presenta afinidad hacia billeteras digitales?', `${pc(p.BAN_BILLETERA.p)} (${nf(p.BAN_BILLETERA.f)} registros)${MES === 'todos' ? `; ${pc(pm.BAN_BILLETERA)} en meses medidos` : ''}. Es la preferencia menos frecuente.`, 'Distinguir perfiles de interés en servicios financieros digitales: un nicho pequeño.'],
+      ['5.3.5 · Pagos en línea', '¿Qué proporción presenta simultáneamente banca digital y pagos en línea activos?', `${pc(p.BANCA_Y_PAGOS.p)} (${nf(p.BANCA_Y_PAGOS.f)} registros). ${p.BAN_BANCA.f ? `De quienes tienen banca, el ${pc(p.BANCA_Y_PAGOS.f / p.BAN_BANCA.f)} también tiene pagos en línea.` : ''}`, 'Describir coincidencias de intereses sin inferir transacciones: una oferta combinada llegaría a casi todo el grupo de banca.'],
+      ['5.3.6 · Restricción de contacto', '¿Qué proporción presenta esta restricción y cómo condiciona una selección para campañas?', `${pc(p.BAN_SUPRESION_I.p)} tiene la restricción activa: solo ${nf(p.CONTACTABLES.f)} registros (${pc(p.CONTACTABLES.p)}) son contactables por mensajes. Entre ellos, la banca digital sube a ${pc(p.BANCA_EN_CONTACTABLES.p)}.`, 'Separar a quienes se puede contactar antes de calcular cualquier audiencia: la restricción no es una preferencia de navegación.'],
+    ];
+    $('qa-proporciones').innerHTML = cards.map(([t, q, r, u], i) => `<div class="card sube" style="--d:${(i % 2) * 100}"><h3>${t}</h3><div class="qa" style="border:0;margin:0;padding:0">${qa(q, r, u)}</div></div>`).join('');
+  }
+
+  // ---------- CONTEO ----------
+  function renderConteo() {
+    const pr = D.probabilidad, per = pr.perfiles;
+    const vx = [], vy = [], vz = [], txt = [], sz = [], col = [];
+    per.forEach(p => { vx.push(+p.banca); vy.push(+p.billetera); vz.push(+p.pagos); txt.push(`${p.etiqueta}<br>${nf(p.registros)} registros (${pc(p.pct)})`);
+      sz.push(10 + 7 * Math.sqrt(p.registros) / Math.sqrt(Math.max(...per.map(q => q.registros))) * 6); col.push(p.etiqueta === 'Ninguna' ? C.gray : (p.banca && p.billetera && p.pagos ? C.coral : C.navy)); });
+    const aristas = { x: [], y: [], z: [] };
+    [[0,0,0,1,0,0],[0,0,0,0,1,0],[0,0,0,0,0,1],[1,0,0,1,1,0],[1,0,0,1,0,1],[0,1,0,1,1,0],[0,1,0,0,1,1],[0,0,1,1,0,1],[0,0,1,0,1,1],[1,1,0,1,1,1],[1,0,1,1,1,1],[0,1,1,1,1,1]]
+      .forEach(([a, b, c, d, e, f]) => { aristas.x.push(a, d, null); aristas.y.push(b, e, null); aristas.z.push(c, f, null); });
+    Plotly.react('p-cubo', [
+      { type: 'scatter3d', mode: 'lines', ...aristas, line: { color: '#c9d1e3', width: 4 }, hoverinfo: 'skip' },
+      { type: 'scatter3d', mode: 'markers+text', x: vx, y: vy, z: vz, text: per.map(p => nf(p.registros)), textposition: 'top center', textfont: { color: C.ink, size: 13, family: 'Outfit' },
+        marker: { size: sz, color: col, opacity: 0.9, line: { color: '#fff', width: 1 } }, customdata: txt, hovertemplate: '%{customdata}<extra></extra>' }],
+      { paper_bgcolor: 'rgba(0,0,0,0)', separators: ',.', font, hoverlabel, margin: { l: 0, r: 0, t: 0, b: 0 }, showlegend: false,
+        scene: { xaxis: ax3('Banca', { tickvals: [0, 1], ticktext: ['No', 'Sí'], range: [-0.25, 1.25] }), yaxis: ax3('Billetera', { tickvals: [0, 1], ticktext: ['No', 'Sí'], range: [-0.25, 1.25] }),
+          zaxis: ax3('Pagos', { tickvals: [0, 1], ticktext: ['No', 'Sí'], range: [-0.25, 1.35] }), camera: { eye: { x: 1.7, y: 1.4, z: 1.0 } }, aspectmode: 'cube' } }, cfg);
+    $('conteo-pasos').innerHTML = `<h3>Paso a paso</h3>
+      <div class="paso"><span class="num">1</span><div><h4 style="font-size:19px">Principio multiplicativo</h4><div class="formula">Total = n<sub>1</sub>·n<sub>2</sub>·n<sub>3</sub> = 2·2·2 = <span class="res">${pr.total_teorico}</span> perfiles</div>
+        <div class="qa">${qa('¿Cuántos perfiles teóricos pueden definirse al combinar los tres indicadores?', `${pr.total_teorico} perfiles teóricos (${pr.con_supresion} si se suma la restricción de contacto). Los ${pr.observados} aparecen en la muestra, pero ${pc(per[0].pct)} de los registros está en «${per[0].etiqueta}».`, 'Organizar las combinaciones antes de contrastarlas con los registros: muestra qué perfiles son masivos y cuáles son nicho.')}</div></div></div>
+      <div class="paso"><span class="num">2</span><div><h4 style="font-size:19px">Permutaciones</h4><div class="formula">P(3,3) = 3!/(3−3)! = <span class="res">${pr.P33}</span> · P(5,3) = 5!/2! = <span class="res">${pr.P53}</span></div>
+        <div class="orden">${pr.ordenes_A.map(o => `<span>${o.join(' → ')}</span>`).join('')}</div>
+        <div class="qa">${qa('¿De cuántas maneras pueden priorizarse campañas distintas?', `Las 3 campañas digitales admiten ${pr.P33} órdenes; con 5 campañas candidatas y 3 meses de calendario hay ${pr.P53} calendarios. Según las proporciones observadas, el orden sugerido es ${pr.orden_datos.join(' → ')}.`, 'Comparar órdenes posibles de ejecución sin confundir prioridad con pertenencia a un grupo.')}</div></div></div>
+      <div class="paso"><span class="num">3</span><div><h4 style="font-size:19px">Combinaciones</h4><div class="formula">C(5,3) = 5!/(3!·2!) = <span class="res">${pr.C53}</span> · C(${pr.K_piloto},10) ≈ <span class="res">10<sup>${nf(pr.C_piloto_log10, 2)}</sup></span></div>
+        <div class="qa">${qa('¿Cuántos grupos distintos de registros pueden seleccionarse para un escenario de campaña?', `Con ${pr.K_piloto} registros contactables con banca digital, hay unos 10<sup>${nf(pr.C_piloto_log10, 1)}</sup> grupos distintos de 10 para un piloto. Elegir 3 de 5 campañas sin orden da ${pr.C53} grupos (cada uno con 3! = 6 órdenes: 10·6 = ${pr.P53}).`, 'Dimensionar las alternativas de selección: hay tantas que la elección debe ser aleatoria o por reglas, nunca manual.')}</div></div></div>`;
+  }
+
+  // ---------- PROBABILIDAD (calculadora hipergeométrica en vivo) ----------
+  const lf = [0];
+  const logFact = n => { for (let i = lf.length; i <= n; i++) lf[i] = lf[i - 1] + Math.log(i); return lf[n]; };
+  const lC = (n, k) => (k < 0 || k > n ? -Infinity : logFact(n) - logFact(k) - logFact(n - k));
+  const pmf = (N, K, m, x) => Math.exp(lC(K, x) + lC(N - K, m - x) - lC(N, m));
+  function setupHiper() {
+    const pr = D.probabilidad, us = [...new Set(pr.conteos.map(c => c.universo))], ins = [...new Set(pr.conteos.map(c => c.indicador))];
+    $('h-universo').innerHTML = us.map(u => `<option>${u}</option>`).join('');
+    $('h-indicador').innerHTML = ins.map(u => `<option>${u}</option>`).join('');
+    ['h-universo', 'h-indicador', 'h-m', 'h-x'].forEach(id => $(id).addEventListener('input', renderHiper));
+    renderHiper();
+    const pb = pr.probs;
+    const filas = [['P(Banca)', 'P(Banca)'], ['P(Billetera)', 'P(Billetera)'], ['P(Pagos en línea)', 'P(Pagos)'], ['P(Banca ∩ Pagos)', 'P(Banca ∩ Pagos)'], ['P(Banca ∪ Pagos)', 'P(Banca ∪ Pagos)'],
+      ['P(al menos una financiera)', 'P(al menos una financiera)'], ['P(Pagos | Banca)', 'P(Pagos | Banca)'], ['P(Banca | contactable)', 'P(Banca | contactable)'], ['P(Banca | con restricción)', 'P(Banca | restringido)']];
+    $('t-probs').innerHTML = '<tr><th>Evento</th><th class="num">Probabilidad</th><th></th></tr>' + filas.map(([n, k]) => `<tr><td>${n}</td><td class="num">${nf(pb[k], 4)}</td><td style="width:30%"><div class="bar"><div style="width:${Math.min(100, 100 * pb[k] / 0.55)}%"></div></div></td></tr>`).join('');
+    const E = pr.escenarios.E, F = pr.escenarios.F;
+    $('qa-probabilidad').innerHTML = qa('¿Qué proporción de registros válidos presenta BAN_BANCA activo? (5.10.4)', `P(Banca) = ${nf(pr.probs['P(Banca)'] * pr.N)} / ${nf(pr.N)} = ${nf(pr.probs['P(Banca)'], 4)}: escogiendo un registro al azar, 6 o 7 de cada 100 tienen banca digital.`, 'Cuantificar afinidades sin interpretar navegación como compra.') +
+      qa('¿Qué probabilidad existe de seleccionar cierta cantidad de registros con una preferencia digital? (5.10.5)', `Al escoger ${E.m} registros al azar de los ${nf(E.N)}: P(X = 0) = ${nf(E.P0, 3)}, P(X ≥ 1) = ${nf(E.P_al_menos_1, 3)} y P(X ≥ 5) = ${nf(E.P_al_menos_5, 4)}; se esperan ${nf(E.esperado, 2)}. Si se escoge solo entre los ${nf(F.N)} contactables, P(X ≥ 5) sube a ${nf(F.P_al_menos_5, 3)} y se esperan ${nf(F.esperado, 1)}.`, 'Evaluar la composición de una selección antes de lanzarla: filtrar contactables multiplica los aciertos.');
+  }
+  function renderHiper() {
+    const pr = D.probabilidad, u = $('h-universo').value, ind = $('h-indicador').value;
+    const c = pr.conteos.find(r => r.universo === u && r.indicador === ind);
+    const N = c.N, K = c.K, mSl = $('h-m'); mSl.max = Math.min(100, N); const m = Math.min(+mSl.value, N);
+    const xSl = $('h-x'); xSl.max = m; const x = Math.min(+xSl.value, m);
+    $('h-m-out').textContent = m; $('h-x-out').textContent = x;
+    const lo = Math.max(0, m - (N - K)), hi = Math.min(m, K);
+    const dist = [...Array(m + 1)].map((_, i) => (i < lo || i > hi ? 0 : pmf(N, K, m, i)));
+    const pEq = dist[x] || 0, pGe = dist.slice(x).reduce((a, b) => a + b, 0), esp = m * K / N;
+    $('h-resultados').innerHTML = [[nf(pEq, 4), `P(X = ${x})`], [nf(pGe, 4), `P(X ≥ ${x})`], [nf(esp, 2), 'Esperado m·K/N']].map(([v, l]) => `<div><span class="big-res">${v}</span><p class="hint">${l}</p></div>`).join('');
+    $('h-formula').innerHTML = `P(X = ${x}) = C(${nf(K)}, ${x})·C(${nf(N - K)}, ${m - x}) / C(${nf(N)}, ${m}) = <span class="res">${nf(pEq, 6)}</span> &nbsp;·&nbsp; N = ${nf(N)}, K = ${nf(K)}, m = ${m}`;
+    Plotly.react('p-hiper', [{ type: 'bar', x: dist.map((_, i) => i), y: dist, marker: { color: dist.map((_, i) => (i >= x ? C.coral : '#c9d1e3')) },
+      hovertemplate: 'P(X = %{x}) = %{y:.4f}<extra></extra>' }],
+      L2({ xaxis: { gridcolor: 'rgba(0,0,0,0)', title: { text: `Registros con «${ind}» entre los ${m} seleccionados`, font: { size: 12 } }, dtick: m > 30 ? 5 : 1 }, yaxis: { gridcolor: C.rule }, bargap: 0.2 }), cfg);
+  }
+
+  // ---------- VALIDACIÓN ----------
+  function renderValidacion() {
+    const filas = [...D.descriptiva.validacion, ...D.regresion.validacion, ...D.probabilidad.validacion];
+    const fmtv = v => Math.abs(v) >= 1000 ? nf(v, 2) : nf(v, 6);
+    $('t-validacion').innerHTML = '<tr><th>Indicador</th><th class="num">Manual / teórico</th><th class="num">Computacional</th><th class="num">Diferencia</th><th class="num">Tolerancia</th><th>Resultado</th><th>Observación</th></tr>' +
+      filas.map(v => `<tr><td><b style="font-weight:600">${v.indicador}</b></td><td class="num">${fmtv(v.manual)}</td><td class="num">${fmtv(v.computacional)}</td><td class="num">${v.diferencia === 0 ? '0' : v.diferencia.toExponential(1)}</td><td class="num">${v.tolerancia === 0 ? '0' : v.tolerancia.toExponential(0)}</td><td><span class="chip ${v.cumple ? 'ok' : 'no'}">${v.cumple ? '✓ Cumple' : '✗ Revisar'}</span></td><td class="note">${v.observacion}</td></tr>`).join('');
+  }
+
+  // ---------- CIENCIA DE DATOS ----------
+  const SEGC = { 'Digitales financieros': C.navy, 'Huella básica: redes y familia': C.coral, 'Hogar conectado (IoT)': C.aqua, 'Sin huella digital': C.gray };
+  const SEGS = { 'Digitales financieros': 'square', 'Huella básica: redes y familia': 'circle', 'Hogar conectado (IoT)': 'diamond' };
+  function renderCiencia() {
+    const c = D.ciencia, m = c.modelo;
+    $('kpis-ciencia').innerHTML = [[pc(c.con_huella), 'Registros con huella', 'alguna bandera de interés'], [`${c.meses_medidos.length} de 9`, 'Meses con huella medida', 'enero a junio'],
+      [nf(c.n_interes), 'Banderas de interés útiles', 'de 88 tras limpiar'], [nf(c.K), 'Segmentos con huella', '+ 1 sin huella'],
+      [nf(m.auc, 3), 'AUC del árbol', 'validación cruzada 5 pliegues'], [pc(c.prop_medidos.BAN_BANCA), 'Banca en meses medidos', `vs ${pc(D.descriptiva.proporciones.BAN_BANCA.p)} en toda la muestra`]]
+      .map(([v, l, n]) => `<div class="kpi"><span class="v">${v}</span><span class="l">${l}</span><span class="n">${n}</span></div>`).join('');
+    $('t-calidad').innerHTML = '<tr><th>Problema</th><th class="num">Afectado</th><th></th><th>Decisión</th></tr>' + c.calidad.slice().sort((a, b) => b.proporcion - a.proporcion)
+      .map(q => `<tr><td>${q.problema}</td><td class="num"><b style="font-weight:600">${pc(q.proporcion)}</b></td><td style="width:18%"><div class="bar"><div style="width:${100 * q.proporcion}%;background:${q.proporcion > 0.5 ? C.coral : C.navy}"></div></div></td><td class="note">${q.decision}</td></tr>`).join('');
+    // huella por mes
+    const pm = c.por_mes;
+    Plotly.react('p-huella-mes', [
+      { type: 'bar', name: 'Con alguna bandera', x: pm.map(r => r.mes.slice(0, 3)), y: pm.map(r => r.con_huella), marker: { color: pm.map(r => (c.meses_medidos.includes(r.FECHA_ACTUALIZACION) ? C.navy : C.coral)) },
+        text: pm.map(r => pc(r.con_huella, 0)), textposition: 'outside', textfont: { color: C.ink }, hovertemplate: '%{x}: %{y:.1%} con huella<extra></extra>' },
+      { type: 'scatter', mode: 'lines+markers', name: 'Banca digital', x: pm.map(r => r.mes.slice(0, 3)), y: pm.map(r => r.banca), line: { color: C.aqua, width: 2 }, marker: { size: 8 }, hovertemplate: '%{x}: %{y:.1%} banca<extra></extra>' }],
+      L2({ showlegend: true, legend: { orientation: 'h', y: 1.12, font: { color: C.ink } }, yaxis: { gridcolor: C.rule, tickformat: '.0%', range: [0, 0.3] }, bargap: 0.3,
+        annotations: pm.filter(r => !c.meses_medidos.includes(r.FECHA_ACTUALIZACION)).map(r => ({ x: r.mes.slice(0, 3), y: 0.05, text: 'no<br>medido', showarrow: false, font: { color: C.coral, size: 12 } })) }), cfg);
+    const pt = c.por_tramo;
+    Plotly.react('p-huella-tramo', [
+      { type: 'bar', name: 'Con alguna bandera', x: pt.map(r => r.tramo.replace(' meses', '').replace('Más de ', '>')), y: pt.map(r => r.con_huella), marker: { color: C.navy }, text: pt.map(r => pc(r.con_huella, 0)), textposition: 'outside', textfont: { color: C.ink }, hovertemplate: '%{x}: %{y:.1%}<extra></extra>' },
+      { type: 'bar', name: 'Banca digital', x: pt.map(r => r.tramo.replace(' meses', '').replace('Más de ', '>')), y: pt.map(r => r.banca), marker: { color: C.aqua }, hovertemplate: '%{x}: %{y:.1%} banca<extra></extra>' }],
+      L2({ showlegend: true, barmode: 'group', legend: { orientation: 'h', y: 1.12, font: { color: C.ink } }, xaxis: { title: { text: 'Antigüedad (meses)', font: { size: 12 } } }, yaxis: { gridcolor: C.rule, tickformat: '.0%', range: [0, 1] }, bargap: 0.25 }), cfg);
+    $('f-huella').textContent = `Consecuencia para la estadística: la proporción de banca digital de toda la muestra (${pc(D.descriptiva.proporciones.BAN_BANCA.p)}) está subestimada; en los meses medidos es ${pc(c.prop_medidos.BAN_BANCA)}. Además, solo el ${pc(pt[0].con_huella, 0)} de las líneas de 0–3 meses tiene huella, frente al ${pc(pt[2].con_huella, 0)} de las de 13–36 meses. Entre contactables tiene huella el ${pc(c.huella_por_restriccion.contactables, 0)}; entre restringidos, el ${pc(c.huella_por_restriccion.restringidos, 0)}.`;
+    // segmentos 3D
+    const P = c.puntos, segs = [...new Set(P.segmento)];
+    Plotly.react('p-segmentos', segs.map(s => { const idx = P.segmento.map((v, i) => (v === s ? i : -1)).filter(i => i >= 0);
+      return { type: 'scatter3d', mode: 'markers', name: s, x: idx.map(i => P.pc1[i]), y: idx.map(i => P.pc2[i]), z: idx.map(i => P.pc3[i]),
+        marker: { size: 4.5, color: SEGC[s], symbol: SEGS[s] || 'circle', opacity: 0.85, line: { width: 0 } },
+        text: idx.map(i => `${s}<br>cargo $${nf(P.VAL_CFM[i])} · ${nf(P.ANTIGUEDAD_MESES[i])} meses`), hovertemplate: '%{text}<extra></extra>' }; }),
+      { paper_bgcolor: 'rgba(0,0,0,0)', separators: ',.', font, hoverlabel, margin: { l: 0, r: 0, t: 0, b: 0 }, legend: { orientation: 'h', y: 1.04, font: { color: C.ink, size: 13 } },
+        scene: { xaxis: ax3('CP1'), yaxis: ax3('CP2'), zaxis: ax3('CP3'), camera: { eye: { x: 1.6, y: 1.3, z: 0.8 } }, aspectmode: 'cube' } }, cfg);
+    const afin = Object.fromEntries(c.afinidad.map(a => [a.segmento, a]));
+    $('segs').innerHTML = c.perfiles.map(p => `<div class="seg" style="--c:${SEGC[p.segmento]}"><div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline"><b>${p.segmento}</b><span style="font-weight:600">${pc(p.pct)}</span></div>
+      <p class="m">${nf(p.registros)} registros · cargo medio $${nf(p.cfm_media)} · antigüedad mediana ${nf(p.antig_mediana)} meses · banca ${pc(p.banca, 0)} · restricción ${pc(p.restriccion, 0)}</p>
+      ${afin[p.segmento] ? `<div class="tags">${afin[p.segmento].afinidades.map(([n, v]) => `<span class="tag">${n.replace(/_/g, ' ')} <b style="color:var(--ink-2)">${v}</b></span>`).join('')}</div>` : ''}</div>`).join('');
+    $('t-segmentos').innerHTML = '<tr><th>Segmento</th><th class="num">Registros</th><th class="num">x̄ cargo</th><th class="num">Mediana</th><th class="num">s</th><th class="num">CV</th><th class="num">Antigüedad mediana</th><th class="num">Banca</th><th class="num">Billetera</th><th class="num">Pagos</th></tr>' +
+      c.perfiles.map(p => `<tr class="${p.cfm_cv === Math.max(...c.perfiles.map(q => q.cfm_cv)) ? 'destacada' : ''}"><td>${p.segmento}</td><td class="num">${nf(p.registros)}</td><td class="num">${nf(p.cfm_media)}</td><td class="num">${nf(p.cfm_mediana)}</td><td class="num">${nf(p.cfm_sd)}</td><td class="num">${nf(p.cfm_cv, 1)} %</td><td class="num">${nf(p.antig_mediana)}</td><td class="num">${pc(p.banca, 0)}</td><td class="num">${pc(p.billetera, 0)}</td><td class="num">${pc(p.pagos, 0)}</td></tr>`).join('');
+    // reglas
+    $('kpis-modelo').innerHTML = [[nf(m.n), 'Registros', 'meses medidos'], [pc(m.tasa), 'Con afinidad financiera', `${nf(m.positivos)} registros`], [nf(m.auc, 3), 'AUC-ROC árbol', `pliegues ${nf(Math.min(...m.auc_pliegues), 3)}–${nf(Math.max(...m.auc_pliegues), 3)}`], [nf(m.auc_gb, 3), 'AUC gradient boosting', 'apenas mejora: la huella domina']]
+      .map(([v, l, n]) => `<div class="kpi"><span class="v">${v}</span><span class="l">${l}</span><span class="n">${n}</span></div>`).join('');
+    $('t-reglas').innerHTML = '<tr><th>Si…</th><th class="num">Registros</th><th class="num">P(afinidad | regla)</th><th class="num">Lift</th><th></th></tr>' +
+      m.reglas.map(r => `<tr><td>${r.regla}</td><td class="num">${nf(r.registros)}</td><td class="num"><b style="font-weight:600">${pc(r.p_afinidad)}</b></td><td class="num">${nf(r.lift, 1)}×</td><td style="width:16%"><div class="bar"><div style="width:${100 * r.p_afinidad}%;background:${r.p_afinidad > 0.5 ? C.coral : C.navy}"></div></div></td></tr>`).join('');
+    $('n-reglas').textContent = `Las banderas se encienden en bloque: la variable «familia» concentra el ${pc(m.importancia[0].importancia, 0)} de la importancia del árbol porque casi siempre acompaña a las demás. Son asociaciones entre banderas, no causas.`;
+    const hip = c.hipergeometrica, claves = Object.keys(hip);
+    Plotly.react('p-hip-ds', claves.map((k, i) => ({ type: 'bar', name: `${k} (N=${nf(hip[k].N)}, K=${nf(hip[k].K)})`, x: hip[k].dist.map((_, x) => x), y: hip[k].dist,
+      marker: { color: i ? C.coral : C.navy }, hovertemplate: 'P(X = %{x}) = %{y:.4f}<extra></extra>' })),
+      L2({ showlegend: true, barmode: 'overlay', legend: { orientation: 'h', y: 1.18, font: { color: C.ink } }, xaxis: { gridcolor: 'rgba(0,0,0,0)', dtick: 2, title: { text: 'Registros con afinidad entre 20 seleccionados', font: { size: 12 } } }, yaxis: { gridcolor: C.rule }, bargap: 0.15 }), cfg);
+    const pr = m.prueba, mx = pr.matriz;
+    $('kpis-prueba').innerHTML = [[pc(pr.exactitud), 'Exactitud', `ingenuo: ${pc(pr.exactitud_ingenuo)}`], [nf(pr.f1, 2), 'F1', 'equilibrio precisión–sensibilidad'], [nf(pr.auc_prueba, 3), 'AUC en prueba', `${nf(pr.n_prueba)} registros`],
+      [pc(pr.precision), 'Precisión', 'de los señalados, cuántos sí'], [pc(pr.sensibilidad), 'Sensibilidad', 'de los que sí, cuántos encontró'], [nf(pr.n_entrenamiento), 'Entrenamiento', 'registros (70 %)']]
+      .map(([v, l, n]) => `<div class="kpi"><span class="v" style="color:var(--navy-2)">${v}</span><span class="l" style="color:var(--navy-2)">${l}</span><span class="n" style="color:var(--ink-2)">${n}</span></div>`).join('');
+    $('t-confusion').innerHTML = `<tr><th>Matriz de confusión</th><th class="num">Predice «no»</th><th class="num">Predice «sí»</th></tr>
+      <tr><td>Realmente no</td><td class="num">${nf(mx.vn)}</td><td class="num">${nf(mx.fp)}</td></tr><tr><td>Realmente sí</td><td class="num">${nf(mx.fn)}</td><td class="num"><b>${nf(mx.vp)}</b></td></tr>`;
+    $('f-prueba').textContent = `En la prueba el árbol acierta el ${pc(pr.exactitud)} de los casos con F1 = ${nf(pr.f1, 2)}: encuentra ${nf(mx.vp)} de los ${nf(mx.vp + mx.fn)} clientes con afinidad y se equivoca con ${nf(mx.fp)} que no la tienen. Un modelo que siempre dijera «no» tendría ${pc(pr.exactitud_ingenuo)} de exactitud, por eso se reporta también el F1. Son estimaciones, no certezas: el modelo aprende asociaciones entre banderas que se activan juntas.`;
+    $('f-reglas').textContent = `Escogiendo 20 registros al azar, P(≥ 5 con afinidad) = ${nf(hip[claves[0]].P_al_menos_5, 3)} y se esperan ${nf(hip[claves[0]].esperado, 1)}. Dentro de la regla «${c.hip_regla}», P(≥ 5) = ${nf(hip[claves[1]].P_al_menos_5, 3)} y se esperan ${nf(hip[claves[1]].esperado, 1)}.`;
+    $('alineacion-cards').innerHTML = c.alineacion.map((a, i) => `<div class="card sube" style="--d:${(i % 2) * 100}"><h3>${a.pregunta}</h3><p class="finding" style="margin-top:8px;padding-top:8px;border-top-width:2px">${a.hallazgo}</p></div>`).join('');
+  }
+})();
+</script>
+</body>
+</html>
